@@ -1,0 +1,62 @@
+[
+  {
+    "id": "20260001",
+    "employeeName": "أبو يوسف أبو الخير",
+    "occupation": "عامل تحميل وتنزيل",
+    "nationality": "بنجلاديشي",
+    "idNumber": "21348462121",
+    "status": "Sari",
+    "startDate": "2026-07-24",
+    "endDate": "2026-07-29",
+    "beneficiary": {
+      "name": "مؤسسة تيمكو كونترتينج",
+      "number": "15-4035424"
+    },
+    "provider": {
+      "name": "حسن بشير محمد معافا",
+      "number": "5-36953207"
+    },
+    "createdAt": "2026-07-30T00:28:39.389Z",
+    "updatedAt": "2026-07-30T11:08:54.748Z"
+  },
+  {
+    "id": "AJR-2026-0001",
+    "employeeName": "عبد ال عزيز",
+    "occupation": "عامل تحميل وتنزيل",
+    "nationality": "بنجلاديشي",
+    "idNumber": "2620853651",
+    "status": "Active",
+    "startDate": "2026-07-28",
+    "endDate": "2027-07-18",
+    "beneficiary": {
+      "name": "مؤسسة تيمكو كونترাকتينج",
+      "number": "15-4035424"
+    },
+    "provider": {
+      "name": "حسن بشير محمد معافا",
+      "number": "5-36953207"
+    },
+    "createdAt": "2026-07-29T00:00:00.000Z",
+    "updatedAt": "2026-07-29T00:00:00.000Z"
+  },
+  {
+    "id": "AJR-2026-0002",
+    "employeeName": "عبد العزيز",
+    "occupation": "عامل تحميل وتنزيل",
+    "nationality": "بنجلاديشي",
+    "idNumber": "2620853667",
+    "status": "Active",
+    "startDate": "2026-07-28",
+    "endDate": "2027-07-18",
+    "beneficiary": {
+      "name": "مؤسسة تيمكو كونترأكتينج",
+      "number": "15-4035424"
+    },
+    "provider": {
+      "name": "حسن بشير محمد معافا",
+      "number": "5-36953207"
+    },
+    "createdAt": "2026-07-29T00:00:00.000Z",
+    "updatedAt": "2026-07-29T00:00:00.000Z"
+  }
+]
