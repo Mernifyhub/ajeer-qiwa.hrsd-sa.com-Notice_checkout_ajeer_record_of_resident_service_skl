@@ -1,38 +1,33 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { put, list } from "@vercel/blob";
 import { STATUSES, type Permit, type PermitInput, type PermitStatus } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const FILE = path.join(DATA_DIR, "permits.json");
-
-async function ensureFile() {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  try {
-    await fs.access(FILE);
-  } catch {
-    await fs.writeFile(FILE, "[]", "utf8");
-  }
-}
+const BLOB_FILENAME = "permits.json";
 
 export async function readPermits(): Promise<Permit[]> {
-  await ensureFile();
-  const raw = await fs.readFile(FILE, "utf8");
   try {
-    const list: unknown = JSON.parse(raw);
-    return Array.isArray(list) ? (list as Permit[]) : [];
+    const { blobs } = await list({ prefix: BLOB_FILENAME });
+    const blob = blobs.find((b) => b.pathname === BLOB_FILENAME);
+    if (!blob) return [];
+
+    const res = await fetch(blob.url, { cache: "no-store" });
+    if (!res.ok) return [];
+    const data: unknown = await res.json();
+    return Array.isArray(data) ? (data as Permit[]) : [];
   } catch {
     return [];
   }
 }
 
 export async function writePermits(list: Permit[]): Promise<void> {
-  await ensureFile();
-  const tmp = `${FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(list, null, 2), "utf8");
-  await fs.rename(tmp, FILE);
+  await put(BLOB_FILENAME, JSON.stringify(list, null, 2), {
+    access: "public",
+    contentType: "application/json",
+    allowOverwrite: true,
+    addRandomSuffix: false,
+  });
 }
 
-/** Dynamic sequential ID: AJR-<currentYear>-0001, 0002, ... */
+/** Dynamic sequential ID: <currentYear>0001, 0002, ... */
 export function nextPermitId(existing: Permit[], now = new Date()): string {
   const year = now.getFullYear();
   const prefix = `${year}`;
