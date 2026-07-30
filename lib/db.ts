@@ -1,11 +1,11 @@
-import { put, list } from "@vercel/blob";
+import { put, list as listBlobs } from "@vercel/blob";
 import { STATUSES, type Permit, type PermitInput, type PermitStatus } from "./types";
 
 const BLOB_FILENAME = "permits.json";
 
 export async function readPermits(): Promise<Permit[]> {
   try {
-    const { blobs } = await list({ prefix: BLOB_FILENAME });
+    const { blobs } = await listBlobs({ prefix: BLOB_FILENAME });
     const blob = blobs.find((b) => b.pathname === BLOB_FILENAME);
     if (!blob) return [];
 
@@ -13,21 +13,26 @@ export async function readPermits(): Promise<Permit[]> {
     if (!res.ok) return [];
     const data: unknown = await res.json();
     return Array.isArray(data) ? (data as Permit[]) : [];
-  } catch {
+  } catch (error) {
+    console.error("readPermits error:", error);
     return [];
   }
 }
 
-export async function writePermits(list: Permit[]): Promise<void> {
-  await put(BLOB_FILENAME, JSON.stringify(list, null, 2), {
-    access: "public",
-    contentType: "application/json",
-    allowOverwrite: true,
-    addRandomSuffix: false,
-  });
+export async function writePermits(permits: Permit[]): Promise<void> {
+  try {
+    await put(BLOB_FILENAME, JSON.stringify(permits, null, 2), {
+      access: "public",
+      contentType: "application/json",
+      allowOverwrite: true,
+      addRandomSuffix: false,
+    });
+  } catch (error) {
+    console.error("writePermits error:", error);
+    throw error;
+  }
 }
 
-/** Dynamic sequential ID: <currentYear>0001, 0002, ... */
 export function nextPermitId(existing: Permit[], now = new Date()): string {
   const year = now.getFullYear();
   const prefix = `${year}`;
@@ -41,7 +46,6 @@ export function nextPermitId(existing: Permit[], now = new Date()): string {
   return `${prefix}${String(max + 1).padStart(4, "0")}`;
 }
 
-/** Validate + normalize an incoming request body into PermitInput. */
 export function normalizeInput(body: unknown): PermitInput | { error: string } {
   const b = (body ?? {}) as Record<string, unknown>;
   const est = (key: string) => {
