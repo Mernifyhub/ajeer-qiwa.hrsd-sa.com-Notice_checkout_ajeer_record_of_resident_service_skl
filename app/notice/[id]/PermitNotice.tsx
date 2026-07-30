@@ -115,7 +115,7 @@ export default function PermitNotice({ id }: { id: string }) {
         setPermit(data);
         setState("ready");
 
-        const url = `https://ajeer-qiwa-hrsd-sa-com-notice-checkout-ajeer-record.vercel.app/?id=${encodeURIComponent(data.id)}`;
+        const url = `https://ajeer-qiwa-hrsd-sa-com-notice-check.vercel.app/?id=${encodeURIComponent(data.id)}`;
         const png = await QRCode.toDataURL(url, {
           width: 480,
           margin: 1,
