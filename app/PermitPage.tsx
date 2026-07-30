@@ -28,6 +28,9 @@ export default function PermitPage() {
   const [gateChecked, setGateChecked] = useState(false);
   const [gateLoading, setGateLoading] = useState(false);
 
+  // Custom alert state
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
   const t = useMemo(() => strings[lang], [lang]);
 
   useEffect(() => {
@@ -72,6 +75,16 @@ export default function PermitPage() {
     return () => window.clearTimeout(id);
   }, [copied]);
 
+  // Close custom alert on Enter/Escape
+  useEffect(() => {
+    if (!alertMessage) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === "Escape") setAlertMessage(null);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [alertMessage]);
+
   const toggleLang = useCallback(() => setLang((v) => (v === "en" ? "ar" : "en")), []);
 
   const runGateCheck = useCallback(() => {
@@ -100,8 +113,8 @@ export default function PermitPage() {
       document.execCommand("copy");
       document.body.removeChild(el);
     }
-    // Native browser alert — shows like "ajeer-qiwa.hrsd-sa.com says: تم نسخ الرابط بنجاح"
-    window.alert("تم نسخ الرابط بنجاح");
+    // Custom alert — shows fake domain instead of long vercel URL
+    setAlertMessage("تم نسخ الرابط بنجاح");
     setCopied(true);
   }, [permit]);
 
@@ -119,10 +132,6 @@ export default function PermitPage() {
             <h1 className="text-[26px] font-bold tracking-tight text-ajeer-ink sm:text-[28px]">
               {t.pageTitle}
             </h1>
-            {/* <span className="inline-flex items-center gap-1.5 rounded-full border border-ajeer-teal/30 bg-ajeer-teal/10 px-3 py-1 text-[12.5px] font-semibold text-ajeer-teal">
-              <CheckIcon className="h-3.5 w-3.5" />
-              {t.verified}
-            </span> */}
           </div>
 
           {state === "loading" && (
@@ -172,7 +181,6 @@ export default function PermitPage() {
             <>
               <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <PermitCard title={t.permitInformation} delay={0}>
-                  {/* <Field label={t.permitNumber} value={<span className="font-semibold text-ajeer-navy">{permit.id}</span>} /> */}
                   <Field label={t.employeeName} value={permit.employeeName} isArabicValue />
                   <Field
                     label={t.permitStatus}
@@ -216,6 +224,43 @@ export default function PermitPage() {
       <div className="print:hidden">
         <HelpWidget t={t} />
       </div>
+
+      {/* Custom Alert Modal — mimics browser alert with fake domain */}
+      {alertMessage && (
+        <div
+          className="fixed inset-0 z-[200] flex items-start justify-center bg-black/40 px-4 pt-20 print:hidden"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setAlertMessage(null)}
+        >
+          <div
+            className="w-full max-w-[420px] overflow-hidden rounded-lg bg-[#2b2b2b] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+          >
+            <div className="px-5 pt-4 pb-2 text-[15px] font-semibold text-white">
+              ajeer-qiwa.hrsd-sa.com says
+            </div>
+            <div
+              className="px-5 pb-5 pt-1 text-[14px] text-[#e0e0e0] min-h-[40px]"
+              dir="rtl"
+              style={{ textAlign: "right" }}
+            >
+              {alertMessage}
+            </div>
+            <div className="flex justify-end gap-2 px-5 py-3">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setAlertMessage(null)}
+                className="rounded-full bg-[#7dd3c0] px-8 py-1.5 text-[14px] font-semibold text-[#1a1a1a] transition hover:bg-[#6bc5b0] focus:outline-none"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Human verification — Arabic only, shown once on first page load */}
       {gateOpen && (
