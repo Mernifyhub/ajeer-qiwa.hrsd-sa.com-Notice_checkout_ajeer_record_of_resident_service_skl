@@ -8,7 +8,7 @@ export interface Establishment {
 }
 
 export interface Permit {
-  id: string; // auto-generated, e.g. AJR-2026-0001
+  //id: string; // auto-generated, e.g. AJR-2026-0001
   employeeName: string;
   occupation: string;
   nationality: string;

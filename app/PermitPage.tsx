@@ -119,10 +119,10 @@ export default function PermitPage() {
             <h1 className="text-[26px] font-bold tracking-tight text-ajeer-ink sm:text-[28px]">
               {t.pageTitle}
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-ajeer-teal/30 bg-ajeer-teal/10 px-3 py-1 text-[12.5px] font-semibold text-ajeer-teal">
+            {/* <span className="inline-flex items-center gap-1.5 rounded-full border border-ajeer-teal/30 bg-ajeer-teal/10 px-3 py-1 text-[12.5px] font-semibold text-ajeer-teal">
               <CheckIcon className="h-3.5 w-3.5" />
               {t.verified}
-            </span>
+            </span> */}
           </div>
 
           {state === "loading" && (
@@ -172,7 +172,7 @@ export default function PermitPage() {
             <>
               <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <PermitCard title={t.permitInformation} delay={0}>
-                  <Field label={t.permitNumber} value={<span className="font-semibold text-ajeer-navy">{permit.id}</span>} />
+                  {/* <Field label={t.permitNumber} value={<span className="font-semibold text-ajeer-navy">{permit.id}</span>} /> */}
                   <Field label={t.employeeName} value={permit.employeeName} isArabicValue />
                   <Field
                     label={t.permitStatus}

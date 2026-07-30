@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+// import type { ReactNode } from "react";
 
 type Props = {
   title: string;
@@ -52,12 +52,8 @@ export type StatusTone = keyof typeof TONES;
 export function StatusBadge({ label, tone = "green" }: { label: string; tone?: StatusTone }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1.5 text-[14px] font-semibold text-white shadow-sm ${TONES[tone]}`}
+      className={`inline-flex items-center rounded-[3px] px-2.5 py-1.5 text-[14px] font-semibold text-white shadow-sm ${TONES[tone]}`}
     >
-      <span className="relative flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/80" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
-      </span>
       {label}
     </span>
   );
