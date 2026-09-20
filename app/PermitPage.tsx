@@ -122,75 +122,72 @@ export default function PermitPage() {
   return (
     <div dir={t.dir} className={`flex min-h-screen flex-col bg-ajeer-bg print:bg-[#fafdff] ${aria}`}>
       {/* 
-        অত্যন্ত শক্তিশালী প্রিন্ট স্টাইলশীট: 
-        ১. এটি কার্ডের সকল হিডেন অ্যানিমেশন বা অপাসিটি ওভাররাইড করে লেখাগুলোকে দৃশ্যমান করবে।
-        ২. প্রিন্ট পেজে ৩টি কলামে কার্ডগুলো সুন্দরভাবে সাজিয়ে রাখবে।
-        ৩. ব্যাকগ্রাউন্ড কালার ও স্ট্যাটাস ব্যাজের রঙ নিখুঁত রাখবে।
+        বিশেষ প্রিন্ট বর্ডার রুলস:
+        ১. ব্রাউজার যাতে কোনো বর্ডার মুছে না ফেলে তার জন্য force solid borders
+        ২. ভেতরের এবং বাইরের সব কলাম/রো এর বর্ডারকে স্পষ্ট নীলচে-ধূসর (#94a3b8) রঙ দিয়ে দৃশ্যমান করা হয়েছে
       */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          /* ব্রাউজার ডিফল্ট ব্যাকগ্রাউন্ড কালার ফোর্স করা */
+          /* Force standard graphics printing */
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
-          }
-          
-          /* অ্যানিমেশন ট্রানজিশন বন্ধ করা যাতে ওপাটিসি জিরো না থাকে */
-          *, *:before, *:after {
-            animation: none !important;
-            transition: none !important;
-            transform: none !important;
-            opacity: 1 !important;
-            box-shadow: none !important;
           }
 
           body {
             background-color: #fafdff !important;
             margin: 0 !important;
             padding: 0 !important;
-            font-size: 12px !important;
           }
 
-          /* প্রিন্ট মার্জিন সেটআপ */
           @page {
             size: A4 portrait;
-            margin: 10mm 8mm 10mm 8mm;
+            margin: 8mm 8mm 8mm 8mm;
           }
 
-          /* ৩ কলাম গ্রিড লেআউট প্রিন্টের জন্য ফিক্সড করা */
+          /* ১. সমস্ত বর্ডার জোরপূর্বক দৃশ্যমান করা (Outer & Inner borders) */
+          [class*="border"], 
+          div, table, td, th, tr {
+            border-style: solid !important;
+            border-color: #94a3b8 !important; /* স্পষ্ট ভিজিবল বর্ডার কালার */
+          }
+
+          /* ২. ডিভাইস/ডিভাইডার লাইন বজায় রাখা */
+          [class*="divide-y"] > * + * {
+            border-top-style: solid !important;
+            border-top-color: #94a3b8 !important;
+          }
+          [class*="divide-x"] > * + * {
+            border-right-style: solid !important;
+            border-right-color: #94a3b8 !important;
+          }
+
+          /* ৩. প্রিন্ট ৩-কলাম গ্রিড লেআউট */
           .print-grid {
             display: grid !important;
             grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
             gap: 12px !important;
             width: 100% !important;
-            max-width: 100% !important;
-            margin-top: 16px !important;
+            margin-top: 10px !important;
           }
 
-          /* কার্ডের ভেতরের ডিজাইন সুন্দর করার জন্য ফোর্স সিএসএস */
+          /* ৪. কার্ড যেন প্রিন্টে কেটে না যায় */
           .print-card-container {
-            display: block !important;
             break-inside: avoid !important;
             page-break-inside: avoid !important;
-            background: #ffffff !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 8px !important;
+            display: block !important;
+            border: 1px solid #818cf8 !important; /* কার্ডের প্রধান বর্ডার */
+            border-radius: 6px !important;
+            background-color: #ffffff !important;
+            overflow: hidden !important;
           }
 
-          /* ফন্ট এবং লাইন হাইট এডজাস্টমেন্ট */
-          .print-card-container h2,
-          .print-card-container h3 {
-            font-size: 14px !important;
-            font-weight: 700 !important;
-            border-bottom: 1px solid #f1f5f9 !important;
-            padding-bottom: 8px !important;
-            margin-bottom: 12px !important;
-          }
-
-          .print-card-container p,
-          .print-card-container span {
-            font-size: 11.5px !important;
+          /* অ্যানিমেশন ট্রানজিশন বন্ধ করা কিন্তু টেক্সট দৃশ্যমান রাখা */
+          *, *:before, *:after {
+            animation: none !important;
+            transition: none !important;
+            opacity: 1 !important;
           }
         }
       `}} />
@@ -252,7 +249,7 @@ export default function PermitPage() {
 
           {state === "ready" && permit && (
             <>
-              {/* ৩টি কার্ড প্রিন্ট করার জন্য ডেডিকেটেড ক্লাস `print-grid` ব্যবহার করা হয়েছে */}
+              {/* Grid Container with print-grid class for strict border & column rendering */}
               <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print-grid">
                 <div className="print-card-container">
                   <PermitCard title={t.permitInformation} delay={0}>
