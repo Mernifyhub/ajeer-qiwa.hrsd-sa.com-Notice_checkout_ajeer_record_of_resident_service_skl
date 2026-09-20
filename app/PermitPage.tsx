@@ -121,15 +121,35 @@ export default function PermitPage() {
   const aria = lang === "ar" ? "font-ar" : "";
 
   return (
-    <div dir={t.dir} className={`flex min-h-screen flex-col bg-ajeer-bg ${aria}`}>
+    <div dir={t.dir} className={`flex min-h-screen flex-col bg-ajeer-bg print:bg-transparent ${aria}`}>
+      {/* CSS injection specifically for print style fixes */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          /* Force colors and backgrounds to render on print */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          body {
+            background-color: #fafdff !important;
+          }
+          /* Prevent cards from breaking awkwardly across pages */
+          .print-card-container {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+        }
+      `}} />
+
       <div className="print:hidden">
         <Header t={t} onToggleLang={toggleLang} />
       </div>
 
-      <main className="flex-1">
-        <div className="mx-auto w-full max-w-[1245px] px-5 pb-14 pt-8 sm:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-[26px] font-bold tracking-tight text-ajeer-ink sm:text-[28px]">
+      <main className="flex-1 print:p-0 print:m-0">
+        <div className="mx-auto w-full max-w-[1245px] px-5 pb-14 pt-8 sm:px-8 print:max-w-full print:p-0 print:pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 print:mb-4">
+            <h1 className="text-[26px] font-bold tracking-tight text-ajeer-ink sm:text-[28px] print:text-[22px]">
               {t.pageTitle}
             </h1>
           </div>
@@ -179,26 +199,33 @@ export default function PermitPage() {
 
           {state === "ready" && permit && (
             <>
-              <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <PermitCard title={t.permitInformation} delay={0}>
-                  <Field label={t.employeeName} value={permit.employeeName} isArabicValue />
-                  <Field
-                    label={t.permitStatus}
-                    value={<StatusBadge label={t.statusLabels[permit.status]} tone={STATUS_TONE[permit.status]} />}
-                  />
-                  <Field label={t.permitStartDate} value={permit.startDate} />
-                  <Field label={t.permitEndDate} value={permit.endDate} />
-                </PermitCard>
+              {/* Force grid layout (3 columns) on printing to match the web view */}
+              <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print:grid-cols-3 print:gap-4 print:mt-2">
+                <div className="print-card-container">
+                  <PermitCard title={t.permitInformation} delay={0}>
+                    <Field label={t.employeeName} value={permit.employeeName} isArabicValue />
+                    <Field
+                      label={t.permitStatus}
+                      value={<StatusBadge label={t.statusLabels[permit.status]} tone={STATUS_TONE[permit.status]} />}
+                    />
+                    <Field label={t.permitStartDate} value={permit.startDate} />
+                    <Field label={t.permitEndDate} value={permit.endDate} />
+                  </PermitCard>
+                </div>
 
-                <PermitCard title={t.beneficiaryEstablishment} delay={90}>
-                  <Field label={t.establishmentName} value={permit.beneficiary.name} isArabicValue />
-                  <Field label={t.establishmentNumber} value={permit.beneficiary.number} />
-                </PermitCard>
+                <div className="print-card-container">
+                  <PermitCard title={t.beneficiaryEstablishment} delay={90}>
+                    <Field label={t.establishmentName} value={permit.beneficiary.name} isArabicValue />
+                    <Field label={t.establishmentNumber} value={permit.beneficiary.number} />
+                  </PermitCard>
+                </div>
 
-                <PermitCard title={t.providerEstablishment} delay={180}>
-                  <Field label={t.establishmentName} value={permit.provider.name} isArabicValue />
-                  <Field label={t.establishmentNumber} value={permit.provider.number} />
-                </PermitCard>
+                <div className="print-card-container">
+                  <PermitCard title={t.providerEstablishment} delay={180}>
+                    <Field label={t.establishmentName} value={permit.provider.name} isArabicValue />
+                    <Field label={t.establishmentNumber} value={permit.provider.number} />
+                  </PermitCard>
+                </div>
               </div>
 
               <div className="mt-8 flex flex-wrap items-center gap-3 print:hidden">
