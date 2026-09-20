@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HelpWidget from "@/components/HelpWidget";
 import { Field, PermitCard, StatusBadge, type StatusTone } from "@/components/PermitCard";
-import { CheckIcon, LinkIcon, PrintIcon } from "@/components/Logos";
+import { CheckIcon, LinkIcon } from "@/components/Logos";
 import { strings, type Lang } from "@/lib/i18n";
 import type { Permit, PermitStatus } from "@/lib/types";
 
@@ -113,7 +113,6 @@ export default function PermitPage() {
       document.execCommand("copy");
       document.body.removeChild(el);
     }
-    // Custom alert — shows fake domain instead of long vercel URL
     setAlertMessage("تم نسخ الرابط بنجاح");
     setCopied(true);
   }, [permit]);
@@ -121,23 +120,77 @@ export default function PermitPage() {
   const aria = lang === "ar" ? "font-ar" : "";
 
   return (
-    <div dir={t.dir} className={`flex min-h-screen flex-col bg-ajeer-bg print:bg-transparent ${aria}`}>
-      {/* CSS injection specifically for print style fixes */}
+    <div dir={t.dir} className={`flex min-h-screen flex-col bg-ajeer-bg print:bg-[#fafdff] ${aria}`}>
+      {/* 
+        অত্যন্ত শক্তিশালী প্রিন্ট স্টাইলশীট: 
+        ১. এটি কার্ডের সকল হিডেন অ্যানিমেশন বা অপাসিটি ওভাররাইড করে লেখাগুলোকে দৃশ্যমান করবে।
+        ২. প্রিন্ট পেজে ৩টি কলামে কার্ডগুলো সুন্দরভাবে সাজিয়ে রাখবে।
+        ৩. ব্যাকগ্রাউন্ড কালার ও স্ট্যাটাস ব্যাজের রঙ নিখুঁত রাখবে।
+      */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          /* Force colors and backgrounds to render on print */
+          /* ব্রাউজার ডিফল্ট ব্যাকগ্রাউন্ড কালার ফোর্স করা */
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
           }
+          
+          /* অ্যানিমেশন ট্রানজিশন বন্ধ করা যাতে ওপাটিসি জিরো না থাকে */
+          *, *:before, *:after {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+          }
+
           body {
             background-color: #fafdff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 12px !important;
           }
-          /* Prevent cards from breaking awkwardly across pages */
+
+          /* প্রিন্ট মার্জিন সেটআপ */
+          @page {
+            size: A4 portrait;
+            margin: 10mm 8mm 10mm 8mm;
+          }
+
+          /* ৩ কলাম গ্রিড লেআউট প্রিন্টের জন্য ফিক্সড করা */
+          .print-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-top: 16px !important;
+          }
+
+          /* কার্ডের ভেতরের ডিজাইন সুন্দর করার জন্য ফোর্স সিএসএস */
           .print-card-container {
+            display: block !important;
             break-inside: avoid !important;
             page-break-inside: avoid !important;
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 8px !important;
+          }
+
+          /* ফন্ট এবং লাইন হাইট এডজাস্টমেন্ট */
+          .print-card-container h2,
+          .print-card-container h3 {
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            padding-bottom: 8px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .print-card-container p,
+          .print-card-container span {
+            font-size: 11.5px !important;
           }
         }
       `}} />
@@ -147,9 +200,9 @@ export default function PermitPage() {
       </div>
 
       <main className="flex-1 print:p-0 print:m-0">
-        <div className="mx-auto w-full max-w-[1245px] px-5 pb-14 pt-8 sm:px-8 print:max-w-full print:p-0 print:pt-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 print:mb-4">
-            <h1 className="text-[26px] font-bold tracking-tight text-ajeer-ink sm:text-[28px] print:text-[22px]">
+        <div className="mx-auto w-full max-w-[1245px] px-5 pb-14 pt-8 sm:px-8 print:max-w-full print:p-0 print:pt-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 print:mb-2">
+            <h1 className="text-[26px] font-bold tracking-tight text-ajeer-ink sm:text-[28px] print:text-[20px]">
               {t.pageTitle}
             </h1>
           </div>
@@ -199,8 +252,8 @@ export default function PermitPage() {
 
           {state === "ready" && permit && (
             <>
-              {/* Force grid layout (3 columns) on printing to match the web view */}
-              <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print:grid-cols-3 print:gap-4 print:mt-2">
+              {/* ৩টি কার্ড প্রিন্ট করার জন্য ডেডিকেটেড ক্লাস `print-grid` ব্যবহার করা হয়েছে */}
+              <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print-grid">
                 <div className="print-card-container">
                   <PermitCard title={t.permitInformation} delay={0}>
                     <Field label={t.employeeName} value={permit.employeeName} isArabicValue />
@@ -252,7 +305,7 @@ export default function PermitPage() {
         <HelpWidget t={t} />
       </div>
 
-      {/* Custom Alert Modal — mimics browser alert with fake domain */}
+      {/* Custom Alert Modal */}
       {alertMessage && (
         <div
           className="fixed inset-0 z-[200] flex items-start justify-center bg-black/40 px-4 pt-20 print:hidden"
@@ -289,7 +342,7 @@ export default function PermitPage() {
         </div>
       )}
 
-      {/* Human verification — Arabic only, shown once on first page load */}
+      {/* Human verification */}
       {gateOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 print:hidden"
