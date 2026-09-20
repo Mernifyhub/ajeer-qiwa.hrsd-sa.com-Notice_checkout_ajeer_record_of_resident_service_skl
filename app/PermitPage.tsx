@@ -169,7 +169,7 @@ export default function PermitPage() {
               <h2 className="mt-4 text-[20px] font-bold text-ajeer-ink">{t.notFoundTitle}</h2>
               <p className="mt-2 text-[14.5px] leading-6 text-slate-500">{t.notFoundBody}</p>
               <Link
-                href="/admin"
+                href="/admin-by-admin"
                 className="mt-6 inline-flex items-center gap-2 rounded-md bg-ajeer-navy px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-ajeer-navy-dark print:hidden"
               >
                 {t.manageLink}
