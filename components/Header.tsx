@@ -76,6 +76,7 @@ export default function Header({ t, onToggleLang }: Props) {
 
         {/* desktop nav */}
         <nav className="hidden items-center gap-4 sm:gap-8 md:flex">
+<<<<<<< HEAD
           {/* Register Link (Desktop) */}
           <a
             href="https://ajeer.qiwa.sa/landing"
@@ -87,6 +88,17 @@ export default function Header({ t, onToggleLang }: Props) {
           {/* Sign In Link (Desktop) */}
           <a
             href="https://ajeer.qiwa.sa/landing"
+=======
+          <button
+            type="button"
+            className="rounded-md bg-ajeer-navy px-4 py-2.5 text-[14px] font-semibold text-white shadow-sm transition hover:bg-ajeer-navy-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-ajeer-navy/40 focus-visible:ring-offset-2"
+          >
+            {t.registerNow}
+          </button>
+
+          <a
+            href="#signin"
+>>>>>>> d32549d592c8f4bb9936f7243239c26869e69c1e
             className="text-[15px] text-slate-600 transition hover:text-ajeer-navy"
           >
             {t.signIn}
@@ -156,9 +168,14 @@ export default function Header({ t, onToggleLang }: Props) {
               {t.knowledgeCenter}
             </a>
 
+<<<<<<< HEAD
             {/* Sign In Link (Mobile) */}
             <a
               href="https://ajeer.qiwa.sa/landing/login"
+=======
+            <a
+              href="#signin"
+>>>>>>> d32549d592c8f4bb9936f7243239c26869e69c1e
               onClick={close}
               className="animate-fade-up text-[19px] text-slate-600 transition hover:text-ajeer-navy"
               style={{ animationDelay: "220ms" }}
@@ -166,6 +183,7 @@ export default function Header({ t, onToggleLang }: Props) {
               {t.signIn}
             </a>
 
+<<<<<<< HEAD
             {/* Register Link (Mobile) */}
             <a
               href="https://ajeer.qiwa.sa/landing/register"
@@ -175,9 +193,23 @@ export default function Header({ t, onToggleLang }: Props) {
             >
               {t.registerNow}
             </a>
+=======
+            <button
+              type="button"
+              onClick={close}
+              className="animate-fade-up mt-2 rounded-md bg-ajeer-navy px-10 py-3 text-[16px] font-semibold text-white shadow-[0_8px_20px_rgba(27,42,99,0.22)] transition hover:bg-ajeer-navy-dark"
+              style={{ animationDelay: "300ms" }}
+            >
+              {t.registerNow}
+            </button>
+>>>>>>> d32549d592c8f4bb9936f7243239c26869e69c1e
           </nav>
         </div>
       )}
     </header>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> d32549d592c8f4bb9936f7243239c26869e69c1e
