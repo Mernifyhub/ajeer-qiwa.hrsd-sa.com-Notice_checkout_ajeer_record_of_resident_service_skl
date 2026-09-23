@@ -345,7 +345,7 @@ export default function PermitNotice({ id }: { id: string }) {
             </DocTable>
           </div>
 
-          {/* Declarations Section */}
+          {/* Declarations Section dkfdkfdfjjfkdf */}
           <div className="mt-8">
             <h3 className="text-center text-[14px] font-bold text-slate-900">
               إقرارات
