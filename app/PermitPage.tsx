@@ -120,15 +120,42 @@ export default function PermitPage() {
   const aria = lang === "ar" ? "font-ar" : "";
 
   return (
-    <div dir={t.dir} className={`flex min-h-screen flex-col bg-ajeer-bg print:bg-[#fafdff] ${aria}`}>
+    <div dir={t.dir} className={`flex min-h-screen flex-col bg-ajeer-bg print:bg-white ${aria}`}>
       {/* 
-        বিশেষ প্রিন্ট বর্ডার রুলস:
-        ১. ব্রাউজার যাতে কোনো বর্ডার মুছে না ফেলে তার জন্য force solid borders
-        ২. ভেতরের এবং বাইরের সব কলাম/রো এর বর্ডারকে স্পষ্ট নীলচে-ধূসর (#94a3b8) রঙ দিয়ে দৃশ্যমান করা হয়েছে
+        বিশেষ সিএসএস সমাধান:
+        ১. ওয়েব এবং প্রিন্ট উভয় জায়গাতেই টেবিল/কার্ডের ভেতরের প্রতিটি ঘর (Vertical & Horizontal Grid lines) এর জন্য ১ পিক্সেল সলিড বর্ডার বলবৎ করা হয়েছে।
+        ২. প্রিন্টে বর্ডার যাতে হালকা হয়ে না যায়, সেজন্য স্পষ্ট গাঢ় বর্ডার (#475569) সেট করা হয়েছে।
       */}
       <style dangerouslySetInnerHTML={{ __html: `
+        /* ওয়েব ভিউ বর্ডার স্টাইল */
+        .permit-card-box {
+          border: 1.5px solid #94a3b8 !important;
+          border-radius: 4px !important;
+          background-color: #ffffff !important;
+          overflow: hidden !important;
+        }
+
+        /* কার্ডের ভেতরের সব ঘর, ডিভ এবং কলামের বর্ডার নিশ্চিত করা */
+        .permit-card-box div, 
+        .permit-card-box section, 
+        .permit-card-box table, 
+        .permit-card-box td, 
+        .permit-card-box th,
+        .permit-card-box [class*="border"] {
+          border-color: #94a3b8 !important;
+        }
+
+        /* ডিভাইডার লাইন (Vertical & Horizontal lines) ভিজিবল রাখা */
+        .permit-card-box [class*="divide-y"] > * + * {
+          border-top: 1px solid #94a3b8 !important;
+        }
+        .permit-card-box [class*="divide-x"] > * + * {
+          border-right: 1px solid #94a3b8 !important;
+          border-left: 1px solid #94a3b8 !important;
+        }
+
+        /* প্রিন্ট প্রিভিউ এর জন্য বিশেষ বর্ডার রুলস */
         @media print {
-          /* Force standard graphics printing */
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -136,58 +163,47 @@ export default function PermitPage() {
           }
 
           body {
-            background-color: #fafdff !important;
+            background-color: #ffffff !important;
             margin: 0 !important;
             padding: 0 !important;
           }
 
           @page {
             size: A4 portrait;
-            margin: 8mm 8mm 8mm 8mm;
+            margin: 10mm;
           }
 
-          /* ১. সমস্ত বর্ডার জোরপূর্বক দৃশ্যমান করা (Outer & Inner borders) */
-          [class*="border"], 
-          div, table, td, th, tr {
-            border-style: solid !important;
-            border-color: #94a3b8 !important; /* স্পষ্ট ভিজিবল বর্ডার কালার */
-          }
-
-          /* ২. ডিভাইস/ডিভাইডার লাইন বজায় রাখা */
-          [class*="divide-y"] > * + * {
-            border-top-style: solid !important;
-            border-top-color: #94a3b8 !important;
-          }
-          [class*="divide-x"] > * + * {
-            border-right-style: solid !important;
-            border-right-color: #94a3b8 !important;
-          }
-
-          /* ৩. প্রিন্ট ৩-কলাম গ্রিড লেআউট */
           .print-grid {
             display: grid !important;
             grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
             gap: 12px !important;
             width: 100% !important;
-            margin-top: 10px !important;
           }
 
-          /* ৪. কার্ড যেন প্রিন্টে কেটে না যায় */
-          .print-card-container {
+          /* প্রিন্টে বর্ডার যাতে কোনোভাবেই না মুছে যায় */
+          .permit-card-box,
+          .permit-card-box * {
+            border-color: #475569 !important; /* স্পস্ট ডার্ক বর্ডার */
+          }
+
+          .permit-card-box {
+            border: 1.5px solid #475569 !important;
             break-inside: avoid !important;
             page-break-inside: avoid !important;
             display: block !important;
-            border: 1px solid #818cf8 !important; /* কার্ডের প্রধান বর্ডার */
-            border-radius: 6px !important;
-            background-color: #ffffff !important;
-            overflow: hidden !important;
           }
 
-          /* অ্যানিমেশন ট্রানজিশন বন্ধ করা কিন্তু টেক্সট দৃশ্যমান রাখা */
-          *, *:before, *:after {
-            animation: none !important;
-            transition: none !important;
-            opacity: 1 !important;
+          .permit-card-box div,
+          .permit-card-box [class*="grid"] > * {
+            border-style: solid !important;
+            border-width: 1px !important;
+            border-color: #475569 !important;
+          }
+
+          /* কার্ড হেডার ব্যাকগ্রাউন্ড প্রিন্ট ফিক্স */
+          .permit-card-box header,
+          .permit-card-box [class*="bg-"] {
+            background-color: #f1f5f9 !important;
           }
         }
       `}} />
@@ -249,9 +265,9 @@ export default function PermitPage() {
 
           {state === "ready" && permit && (
             <>
-              {/* Grid Container with print-grid class for strict border & column rendering */}
+              {/* ৩টি কার্ডের প্রতিটি বক্সকে `permit-card-box` ক্লাসে র‍্যাপ করা হয়েছে যেন বর্ডার নিশ্চিত থাকে */}
               <div className="mt-7 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 print-grid">
-                <div className="print-card-container">
+                <div className="permit-card-box">
                   <PermitCard title={t.permitInformation} delay={0}>
                     <Field label={t.employeeName} value={permit.employeeName} isArabicValue />
                     <Field
@@ -263,14 +279,14 @@ export default function PermitPage() {
                   </PermitCard>
                 </div>
 
-                <div className="print-card-container">
+                <div className="permit-card-box">
                   <PermitCard title={t.beneficiaryEstablishment} delay={90}>
                     <Field label={t.establishmentName} value={permit.beneficiary.name} isArabicValue />
                     <Field label={t.establishmentNumber} value={permit.beneficiary.number} />
                   </PermitCard>
                 </div>
 
-                <div className="print-card-container">
+                <div className="permit-card-box">
                   <PermitCard title={t.providerEstablishment} delay={180}>
                     <Field label={t.establishmentName} value={permit.provider.name} isArabicValue />
                     <Field label={t.establishmentNumber} value={permit.provider.number} />

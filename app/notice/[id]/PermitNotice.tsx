@@ -1,11 +1,30 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { AjeerLogo, MhrsdLogo, PrintIcon } from "@/components/Logos";
 import type { Permit } from "@/lib/types";
 
+// Download SVG Icon (মূল ডিজাইনে কোনো পরিবর্তন করবে না)
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+      />
+    </svg>
+  );
+}
 
 const DECLARATIONS = [
   "أقر أنا المنشأة المقدمة للخدمة والموضحة بياناتي أعلاه وأتعهد بـ:",
@@ -17,7 +36,7 @@ const DECLARATIONS = [
 
 const v = (s?: string) => (s && s.trim() ? s : "—");
 
-/* ---------- Table Building Blocks ---------- */
+/* ---------- Table Building Blocks (১০০% আপনার মূল কোড) ---------- */
 
 function DocTable({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -30,7 +49,7 @@ function DocTable({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/* Row with 2 label-value pairs side by side (matching the image) */
+/* Row with 2 label-value pairs side by side (১০০% আপনার মূল কোড) */
 function DocRow({
   label1,
   value1,
@@ -95,9 +114,13 @@ function DocRow({
 /* ---------- Main Component ---------- */
 
 export default function PermitNotice({ id }: { id: string }) {
-  const [permit, setPermit] = useState<Permit | null>(null);
+  const [permit, setPermit] = useState<KeepTrackOfPermit | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
   const [qr, setQr] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
+  
+  // ডাউনলোডের জন্য ডকুমেন্ট ক্যাপচার রেফারেন্স
+  const documentRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +155,31 @@ export default function PermitNotice({ id }: { id: string }) {
     };
   }, [id]);
 
+  // ডাউনলোড স্ক্রিপ্ট রান করার ফাংশন
+  const handleDownloadPdf = async () => {
+    if (!documentRef.current) return;
+    setIsDownloading(true);
+
+    try {
+      // @ts-expect-error html2pdf.js library import
+      const html2pdf = (await import("html2pdf.js")).default;
+      const opt = {
+        margin: [4, 4, 4, 4], // পেজ মার্জিন
+        filename: `Ajeer-Permit-${permit?.id || "notice"}.pdf`,
+        image: { type: "jpeg", quality: 1.0 },
+        html2canvas: { scale: 3, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      await html2pdf().set(opt).from(documentRef.current).save();
+    } catch (error) {
+      console.error("PDF generation failed, falling back to print:", error);
+      window.print();
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (state === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-ajeer-bg">
@@ -159,7 +207,8 @@ export default function PermitNotice({ id }: { id: string }) {
   return (
     <div className="min-h-screen bg-ajeer-bg py-6 print:bg-white print:py-0">
       <div className="mx-auto w-full max-w-[820px] px-4 sm:px-6 print:max-w-none print:px-0">
-        {/* Toolbar — screen only */}
+        
+        {/* Toolbar — Screen only */}
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <Link
             href="/admin"
@@ -167,52 +216,67 @@ export default function PermitNotice({ id }: { id: string }) {
           >
             ← Back to Management
           </Link>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-md bg-ajeer-navy px-5 py-2.5 text-[14px] font-semibold text-white shadow-sm transition hover:bg-ajeer-navy-dark"
-          >
-            <PrintIcon className="h-[17px] w-[17px]" />
-            Print
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Download PDF Button */}
+            <button
+              type="button"
+              disabled={isDownloading}
+              onClick={handleDownloadPdf}
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-[14px] font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+            >
+              <DownloadIcon className="h-[17px] w-[17px] text-slate-600" />
+              {isDownloading ? "Downloading..." : "Download PDF"}
+            </button>
+
+            {/* Print Button */}
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 rounded-md bg-ajeer-navy px-5 py-2.5 text-[14px] font-semibold text-white shadow-sm transition hover:bg-ajeer-navy-dark cursor-pointer"
+            >
+              <PrintIcon className="h-[17px] w-[17px]" />
+              Print
+            </button>
+          </div>
         </div>
 
-        {/* Paper */}
+        {/* Paper (১০০% আপনার মূল ডিজাইন এবং ক্লাসেস) */}
         <article
+          ref={documentRef}
           dir="rtl"
           className="font-ar mt-5 bg-white p-6 shadow-[0_10px_30px_rgba(16,24,40,0.10)] ring-1 ring-slate-200 sm:p-10 print:mt-0 print:p-0 print:shadow-none print:ring-0"
         >
-          {/* Header: QR (left) + title/logos (right) */}
-          {/* Header: QR (left) + title/logos (right) — all in one line */}
-<header dir="ltr" className="flex items-center justify-between border border-slate-300 p-2 ">
-  {/* QR — left side */}
-  <div className="shrink-0 border border-slate-300 bg-white p-2">
-    {qr ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={qr}
-        alt={`QR — ${permit.id}`}
-        className="h-[170px] w-[170px] sm:h-[190px] sm:w-[190px]"
-      />
-    ) : (
-      <div className="h-[170px] w-[170px] animate-pulse bg-slate-100 sm:h-[190px] sm:w-[190px]" />
-    )}
-  </div>
+          {/* Header */}
+          <header dir="ltr" className="flex items-center justify-between border border-slate-300 p-2">
+            {/* QR — left side */}
+            <div className="shrink-0 border border-slate-300 bg-white p-2">
+              {qr ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={qr}
+                  alt={`QR — ${permit.id}`}
+                  className="h-[170px] w-[170px] sm:h-[190px] sm:w-[190px]"
+                />
+              ) : (
+                <div className="h-[170px] w-[170px] animate-pulse bg-slate-100 sm:h-[190px] sm:w-[190px]" />
+              )}
+            </div>
 
-  {/* Title + logos — right side, all in one line */}
-  <div className="flex items-center gap-2">
-    <h1
-      dir="rtl"
-      className="text-right text-[16px] font-bold leading-7 text-slate-700"
-    >
-      إشعار أجير حلول الموارد
-      <br />
-      البشرية
-    </h1>
-    <AjeerLogo className="h-12 w-auto" />
-    <MhrsdLogo className="h-12 w-auto" />
-  </div>
-</header>
+            {/* Title + logos — right side, all in one line */}
+            <div className="flex items-center gap-2">
+              <h1
+                dir="rtl"
+                className="text-right text-[16px] font-bold leading-7 text-slate-700"
+              >
+                إشعار أجير حلول الموارد
+                <br />
+                البشرية
+              </h1>
+              <AjeerLogo className="h-12 w-auto" />
+              <MhrsdLogo className="h-12 w-auto" />
+            </div>
+          </header>
 
           {/* Intro paragraph */}
           <p className="mt-8 text-justify text-[12px] leading-[24px] text-slate-700">
@@ -295,9 +359,6 @@ export default function PermitNotice({ id }: { id: string }) {
               ))}
             </ul>
           </div>
-
-          {/* Permit ID strip */}
-         
         </article>
       </div>
     </div>
