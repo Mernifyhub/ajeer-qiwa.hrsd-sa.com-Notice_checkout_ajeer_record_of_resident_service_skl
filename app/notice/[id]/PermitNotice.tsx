@@ -114,12 +114,12 @@ function DocRow({
 /* ---------- Main Component ---------- */
 
 export default function PermitNotice({ id }: { id: string }) {
-  const [permit, setPermit] = useState<KeepTrackOfPermit | null>(null);
+  const [permit, setPermit] = useState<Permit | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
   const [qr, setQr] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   
-  // ডাউনলোডের জন্য ডকুমেন্ট ক্যাপচার রেফারেন্স
+  // ডাউনলোডের জন্য ডকুমেন্ট রেফারেন্স
   const documentRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -155,16 +155,28 @@ export default function PermitNotice({ id }: { id: string }) {
     };
   }, [id]);
 
-  // ডাউনলোড স্ক্রিপ্ট রান করার ফাংশন
+  // ডাউনলোড স্ক্রিপ্ট রান করার ফাংশন (টাইপ এরর ফিক্সড)
   const handleDownloadPdf = async () => {
     if (!documentRef.current) return;
     setIsDownloading(true);
 
     try {
-      // @ts-expect-error html2pdf.js library import
-      const html2pdf = (await import("html2pdf.js")).default;
+      const html2pdfModule = (await import("html2pdf.js")) as unknown as {
+        default?: () => {
+          set: (opt: unknown) => {
+            from: (elem: HTMLElement) => { save: () => Promise<void> };
+          };
+        };
+      };
+      
+      const html2pdf = html2pdfModule.default || (html2pdfModule as unknown as () => {
+        set: (opt: unknown) => {
+          from: (elem: HTMLElement) => { save: () => Promise<void> };
+        };
+      });
+
       const opt = {
-        margin: [4, 4, 4, 4], // পেজ মার্জিন
+        margin: [4, 4, 4, 4],
         filename: `Ajeer-Permit-${permit?.id || "notice"}.pdf`,
         image: { type: "jpeg", quality: 1.0 },
         html2canvas: { scale: 3, useCORS: true, scrollY: 0 },
@@ -345,7 +357,7 @@ export default function PermitNotice({ id }: { id: string }) {
             </DocTable>
           </div>
 
-          {/* Declarations Section dkfdkfdfjjfkdf */}
+          {/* Declarations Section */}
           <div className="mt-8">
             <h3 className="text-center text-[14px] font-bold text-slate-900">
               إقرارات
