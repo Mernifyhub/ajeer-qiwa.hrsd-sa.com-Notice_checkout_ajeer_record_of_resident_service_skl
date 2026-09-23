@@ -32,15 +32,19 @@ function DocTable({
   return (
     <section className="border border-slate-400">
       <div className="border-b border-slate-400 bg-slate-100 px-3 py-2 text-center">
-        <h3 className="text-[13px] font-bold text-slate-800">{title}</h3>
+        <h3 className="text-[13px] font-bold text-slate-800">
+          {title}
+        </h3>
       </div>
 
-      <div className="divide-y divide-slate-400">{children}</div>
+      <div className="divide-y divide-slate-400">
+        {children}
+      </div>
     </section>
   );
 }
 
-/* Row with 2 label-value pairs side by side */
+/* ---------- Table Row ---------- */
 
 function DocRow({
   label1,
@@ -60,6 +64,7 @@ function DocRow({
   return (
     <div className="grid grid-cols-4 divide-x divide-slate-400 divide-x-reverse">
       {/* Label 1 */}
+
       <div className="flex flex-col justify-center gap-0.5 bg-slate-50 px-3 py-2.5">
         <span className="text-[11.5px] font-semibold leading-4 text-slate-700">
           {label1.ar}
@@ -74,6 +79,7 @@ function DocRow({
       </div>
 
       {/* Value 1 */}
+
       <div
         dir={ltr1 ? "ltr" : undefined}
         className="flex items-center justify-center break-all bg-white px-2 py-2.5 text-center text-[12.5px] font-semibold text-slate-800"
@@ -82,6 +88,7 @@ function DocRow({
       </div>
 
       {/* Label 2 */}
+
       {label2 ? (
         <div className="flex flex-col justify-center gap-0.5 bg-slate-50 px-3 py-2.5">
           <span className="text-[11.5px] font-semibold leading-4 text-slate-700">
@@ -100,6 +107,7 @@ function DocRow({
       )}
 
       {/* Value 2 */}
+
       {value2 !== undefined ? (
         <div
           dir={ltr2 ? "ltr" : undefined}
@@ -118,10 +126,13 @@ function DocRow({
 
 export default function PermitNotice({ id }: { id: string }) {
   const [permit, setPermit] = useState<Permit | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "missing">(
-    "loading"
-  );
+
+  const [state, setState] = useState<
+    "loading" | "ready" | "missing"
+  >("loading");
+
   const [qr, setQr] = useState("");
+
   const [downloading, setDownloading] = useState(false);
 
   const printRef = useRef<HTMLElement>(null);
@@ -141,7 +152,10 @@ export default function PermitNotice({ id }: { id: string }) {
         );
 
         if (!res.ok) {
-          if (!cancelled) setState("missing");
+          if (!cancelled) {
+            setState("missing");
+          }
+
           return;
         }
 
@@ -152,11 +166,12 @@ export default function PermitNotice({ id }: { id: string }) {
         setPermit(data);
         setState("ready");
 
-        /* ---------- QR Code ---------- */
+        /* ---------- QR ---------- */
 
-        const url = `https://ajeer-qiwa-hrsd-sa-com-notice-check.vercel.app/Notice_checkout_ajeer_record_of_resident_service_skl.php?id=${encodeURIComponent(
-          data.id
-        )}`;
+        const url =
+          `https://ajeer-qiwa-hrsd-sa-com-notice-check.vercel.app/` +
+          `Notice_checkout_ajeer_record_of_resident_service_skl.php?id=` +
+          `${encodeURIComponent(data.id)}`;
 
         const png = await QRCode.toDataURL(url, {
           width: 480,
@@ -183,90 +198,300 @@ export default function PermitNotice({ id }: { id: string }) {
     };
   }, [id]);
 
-  /* ---------- Download PDF ---------- */
+  /* =========================================================
+     PDF DOWNLOAD
+     ========================================================= */
 
-const handleDownload = async () => {
-  if (!printRef.current || !permit) return;
+  const handleDownload = async () => {
+    if (!printRef.current || !permit) return;
 
-  try {
-    setDownloading(true);
+    try {
+      setDownloading(true);
 
-    const element = printRef.current;
+      const element = printRef.current;
 
-    // Make sure QR/images/fonts are rendered
-    await document.fonts.ready;
+      /*
+       * Wait for fonts and images to finish rendering.
+       */
 
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: "#ffffff",
-      logging: false,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
-    });
+      await document.fonts.ready;
 
-    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const images = Array.from(
+        element.querySelectorAll("img")
+      );
 
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) {
+            return Promise.resolve();
+          }
 
-    const pageWidth = 210;
-    const pageHeight = 297;
+          return new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        })
+      );
 
-    const margin = 5;
+      /*
+       * html2canvas has a problem with modern CSS
+       * color functions such as oklch().
+       *
+       * We create a temporary cloned document and
+       * replace unsupported oklch colors there only.
+       *
+       * The actual page/design is NOT changed.
+       */
 
-    const availableWidth = pageWidth - margin * 2;
+      const canvas = await html2canvas(element, {
+        scale: 2,
 
-    const imageHeight =
-      (canvas.height * availableWidth) / canvas.width;
+        useCORS: true,
 
-    let heightLeft = imageHeight;
-    let position = margin;
+        allowTaint: false,
 
-    // First page
-    pdf.addImage(
-      imgData,
-      "JPEG",
-      margin,
-      position,
-      availableWidth,
-      imageHeight
-    );
+        backgroundColor: "#ffffff",
 
-    heightLeft -= pageHeight - margin * 2;
+        logging: false,
 
-    // Additional pages
-    while (heightLeft > 0) {
-      position = margin - (imageHeight - heightLeft);
+        imageTimeout: 15000,
 
-      pdf.addPage();
+        onclone: (clonedDocument) => {
+          const clonedRoot =
+            clonedDocument.querySelector(
+              "[data-pdf-content='true']"
+            ) as HTMLElement | null;
+
+          if (!clonedRoot) return;
+
+          const allElements = [
+            clonedRoot,
+            ...Array.from(
+              clonedRoot.querySelectorAll("*")
+            ),
+          ] as HTMLElement[];
+
+          /*
+           * Force compatible colors only inside
+           * the cloned PDF document.
+           */
+
+          allElements.forEach((el) => {
+            const computed =
+              clonedDocument.defaultView?.getComputedStyle(el);
+
+            if (!computed) return;
+
+            /*
+             * Color
+             */
+
+            if (
+              computed.color &&
+              computed.color.includes("oklch")
+            ) {
+              el.style.setProperty(
+                "color",
+                "#334155",
+                "important"
+              );
+            }
+
+            /*
+             * Background
+             */
+
+            if (
+              computed.backgroundColor &&
+              computed.backgroundColor.includes("oklch")
+            ) {
+              el.style.setProperty(
+                "background-color",
+                "#ffffff",
+                "important"
+              );
+            }
+
+            /*
+             * Border colors
+             */
+
+            const borderProperties = [
+              "border-top-color",
+              "border-right-color",
+              "border-bottom-color",
+              "border-left-color",
+            ];
+
+            borderProperties.forEach((property) => {
+              const value =
+                computed.getPropertyValue(property);
+
+              if (value && value.includes("oklch")) {
+                el.style.setProperty(
+                  property,
+                  "#94a3b8",
+                  "important"
+                );
+              }
+            });
+
+            /*
+             * Outline
+             */
+
+            const outline =
+              computed.getPropertyValue("outline-color");
+
+            if (outline && outline.includes("oklch")) {
+              el.style.setProperty(
+                "outline-color",
+                "#94a3b8",
+                "important"
+              );
+            }
+
+            /*
+             * Box shadow
+             */
+
+            const shadow =
+              computed.getPropertyValue("box-shadow");
+
+            if (shadow && shadow.includes("oklch")) {
+              el.style.setProperty(
+                "box-shadow",
+                "none",
+                "important"
+              );
+            }
+
+            /*
+             * Text decoration
+             */
+
+            const decoration =
+              computed.getPropertyValue(
+                "text-decoration-color"
+              );
+
+            if (
+              decoration &&
+              decoration.includes("oklch")
+            ) {
+              el.style.setProperty(
+                "text-decoration-color",
+                "#334155",
+                "important"
+              );
+            }
+          });
+        },
+      });
+
+      /*
+       * Convert canvas to image.
+       */
+
+      const imgData = canvas.toDataURL(
+        "image/jpeg",
+        0.95
+      );
+
+      /*
+       * Create A4 PDF.
+       */
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+
+      const margin = 5;
+
+      const contentWidth =
+        pageWidth - margin * 2;
+
+      const contentHeight =
+        (canvas.height * contentWidth) /
+        canvas.width;
+
+      /*
+       * We use the whole captured document and
+       * automatically create additional A4 pages
+       * when required.
+       */
+
+      let remainingHeight = contentHeight;
+
+      let position = margin;
+
+      /*
+       * First page
+       */
 
       pdf.addImage(
         imgData,
         "JPEG",
         margin,
         position,
-        availableWidth,
-        imageHeight
+        contentWidth,
+        contentHeight
       );
 
-      heightLeft -= pageHeight - margin * 2;
+      remainingHeight -=
+        pageHeight - margin * 2;
+
+      /*
+       * More pages
+       */
+
+      while (remainingHeight > 0) {
+        pdf.addPage();
+
+        position =
+          margin -
+          (contentHeight -
+            remainingHeight);
+
+        pdf.addImage(
+          imgData,
+          "JPEG",
+          margin,
+          position,
+          contentWidth,
+          contentHeight
+        );
+
+        remainingHeight -=
+          pageHeight - margin * 2;
+      }
+
+      /*
+       * Direct download.
+       */
+
+      pdf.save(
+        `Ajeer-Permit-${permit.id}.pdf`
+      );
+    } catch (error) {
+      console.error(
+        "PDF download error:",
+        error
+      );
+
+      alert(
+        "PDF download failed. Please try again."
+      );
+    } finally {
+      setDownloading(false);
     }
-
-    // Direct PDF download
-    pdf.save(`Ajeer-Permit-${permit.id}.pdf`);
-  } catch (error) {
-    console.error("PDF download error:", error);
-
-    alert("PDF download failed. Please try again.");
-  } finally {
-    setDownloading(false);
-  }
-};
+  };
 
   /* ---------- Loading ---------- */
 
@@ -299,15 +524,17 @@ const handleDownload = async () => {
     );
   }
 
-  /* ---------- Main UI ---------- */
+  /* ---------- Main ---------- */
 
   return (
     <div className="min-h-screen bg-ajeer-bg py-6 print:bg-white print:py-0">
       <div className="mx-auto w-full max-w-[820px] px-4 sm:px-6 print:max-w-none print:px-0">
-        {/* Toolbar — screen only */}
+
+        {/* Toolbar */}
 
         <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-          {/* Back Button */}
+
+          {/* Back */}
 
           <Link
             href="/admin"
@@ -316,10 +543,11 @@ const handleDownload = async () => {
             ← Back to Management
           </Link>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
 
           <div className="flex items-center gap-2">
-            {/* Download Button */}
+
+            {/* Download */}
 
             <button
               type="button"
@@ -335,8 +563,6 @@ const handleDownload = async () => {
                 </>
               ) : (
                 <>
-                  {/* Download Icon */}
-
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-[17px] w-[17px]"
@@ -357,7 +583,7 @@ const handleDownload = async () => {
               )}
             </button>
 
-            {/* Print Button */}
+            {/* Print */}
 
             <button
               type="button"
@@ -375,16 +601,19 @@ const handleDownload = async () => {
 
         <article
           ref={printRef}
+          data-pdf-content="true"
           dir="rtl"
           className="font-ar mt-5 bg-white p-6 shadow-[0_10px_30px_rgba(16,24,40,0.10)] ring-1 ring-slate-200 sm:p-10 print:mt-0 print:p-0 print:shadow-none print:ring-0"
         >
+
           {/* Header */}
 
           <header
             dir="ltr"
             className="flex items-center justify-between border border-slate-300 p-2"
           >
-            {/* QR — left side */}
+
+            {/* QR */}
 
             <div className="shrink-0 border border-slate-300 bg-white p-2">
               {qr ? (
@@ -402,6 +631,7 @@ const handleDownload = async () => {
             {/* Title + Logos */}
 
             <div className="flex items-center gap-2">
+
               <h1
                 dir="rtl"
                 className="text-right text-[16px] font-bold leading-7 text-slate-700"
@@ -414,25 +644,27 @@ const handleDownload = async () => {
               <AjeerLogo className="h-12 w-auto" />
 
               <MhrsdLogo className="h-12 w-auto" />
+
             </div>
           </header>
 
-          {/* Intro paragraph */}
+          {/* Intro */}
 
           <p className="mt-8 text-justify text-[12px] leading-[24px] text-slate-700">
-            نشعركم أنه تم التعاقد من قبلنا كجهة مقدمة للخدمة مع الجهة
-            المستفيدة من الخدمة حسب المعلومات المبينة أدناه، وذلك تم تسجيل
-            معلومات العقد لتكون بحوزة العامل لإثبات عدم مخالفته لنظام العمل
-            ولتقديمها إلى من يهمه الأمر من الجهات المختصة عند طلبها للتحقق من
-            صحة تواجده في مكان تقديم الخدمة.
+            نشعركم أنه تم التعاقد من قبلنا كجهة مقدمة للخدمة مع الجهة المستفيدة من
+            الخدمة حسب المعلومات المبينة أدناه، وذلك تم تسجيل معلومات العقد لتكون
+            بحوزة العامل لإثبات عدم مخالفته لنظام العمل ولتقديمها إلى من يهمه الأمر
+            من الجهات المختصة عند طلبها للتحقق من صحة تواجده في مكان تقديم الخدمة.
           </p>
 
           {/* Tables */}
 
           <div className="mt-6 space-y-3">
+
             {/* Laborer */}
 
             <DocTable title="بيانات العامل  Laborer Information">
+
               <DocRow
                 label1={{
                   ar: "اسم العامل",
@@ -459,11 +691,13 @@ const handleDownload = async () => {
                 }}
                 value2={v(permit.nationality)}
               />
+
             </DocTable>
 
             {/* Provider */}
 
             <DocTable title="بيانات مقدم الخدمة  Provider Information">
+
               <DocRow
                 label1={{
                   ar: "المنشأة المقدمة للخدمة",
@@ -477,11 +711,13 @@ const handleDownload = async () => {
                 value2={v(permit.provider.number)}
                 ltr2
               />
+
             </DocTable>
 
             {/* Beneficiary */}
 
             <DocTable title="بيانات المستفيد من الخدمة  Beneficiary Information">
+
               <DocRow
                 label1={{
                   ar: "المنشأة المستفيدة من الخدمة",
@@ -495,11 +731,13 @@ const handleDownload = async () => {
                 value2={v(permit.beneficiary.number)}
                 ltr2
               />
+
             </DocTable>
 
             {/* Permit */}
 
             <DocTable title="بيانات التصريح  Permit Information">
+
               <DocRow
                 label1={{
                   ar: "تاريخ بداية التصريح",
@@ -514,12 +752,15 @@ const handleDownload = async () => {
                 value2={v(permit.endDate)}
                 ltr2
               />
+
             </DocTable>
+
           </div>
 
           {/* Declarations */}
 
           <div className="mt-8">
+
             <h3 className="text-center text-[14px] font-bold text-slate-900">
               إقرارات
             </h3>
@@ -533,10 +774,11 @@ const handleDownload = async () => {
                 <li key={note}>{note}</li>
               ))}
             </ul>
+
           </div>
+
         </article>
       </div>
     </div>
   );
 }
-
