@@ -62,10 +62,9 @@ function DocRow({
   ltr2?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-4 divide-x divide-slate-400 divide-x-reverse">
+    <div className="grid grid-cols-4">
       {/* Label 1 */}
-
-      <div className="flex flex-col justify-center gap-0.5 bg-slate-50 px-3 py-2.5">
+      <div className="flex flex-col justify-center gap-0.5 border-l border-slate-400 bg-slate-50 px-3 py-2.5">
         <span className="text-[11.5px] font-semibold leading-4 text-slate-700">
           {label1.ar}
         </span>
@@ -79,18 +78,16 @@ function DocRow({
       </div>
 
       {/* Value 1 */}
-
       <div
         dir={ltr1 ? "ltr" : undefined}
-        className="flex items-center justify-center break-all bg-white px-2 py-2.5 text-center text-[12.5px] font-semibold text-slate-800"
+        className="flex items-center justify-center break-all border-l border-slate-400 bg-white px-2 py-2.5 text-center text-[12.5px] font-semibold text-slate-800"
       >
         {value1}
       </div>
 
       {/* Label 2 */}
-
       {label2 ? (
-        <div className="flex flex-col justify-center gap-0.5 bg-slate-50 px-3 py-2.5">
+        <div className="flex flex-col justify-center gap-0.5 border-l border-slate-400 bg-slate-50 px-3 py-2.5">
           <span className="text-[11.5px] font-semibold leading-4 text-slate-700">
             {label2.ar}
           </span>
@@ -103,11 +100,10 @@ function DocRow({
           </span>
         </div>
       ) : (
-        <div className="bg-slate-50" />
+        <div className="border-l border-slate-400 bg-slate-50" />
       )}
 
       {/* Value 2 */}
-
       {value2 !== undefined ? (
         <div
           dir={ltr2 ? "ltr" : undefined}
