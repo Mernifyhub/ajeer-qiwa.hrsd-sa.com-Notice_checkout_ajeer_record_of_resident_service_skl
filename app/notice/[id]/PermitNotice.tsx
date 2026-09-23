@@ -66,7 +66,6 @@ function DocRow({
 }) {
   return (
     <div className="grid grid-cols-4 divide-x divide-slate-400 divide-x-reverse">
-      {/* Right-most: Label 1 */}
       <div className="flex flex-col justify-center gap-0.5 bg-slate-50 px-3 py-2.5">
         <span className="text-[11.5px] font-semibold leading-4 text-slate-700">
           {label1.ar}
@@ -75,14 +74,12 @@ function DocRow({
           {label1.en}
         </span>
       </div>
-      {/* Value 1 */}
       <div
         dir={ltr1 ? "ltr" : undefined}
         className="flex items-center justify-center break-all bg-white px-2 py-2.5 text-center text-[12.5px] font-semibold text-slate-800"
       >
         {value1}
       </div>
-      {/* Label 2 */}
       {label2 ? (
         <div className="flex flex-col justify-center gap-0.5 bg-slate-50 px-3 py-2.5">
           <span className="text-[11.5px] font-semibold leading-4 text-slate-700">
@@ -95,7 +92,6 @@ function DocRow({
       ) : (
         <div className="bg-slate-50" />
       )}
-      {/* Value 2 */}
       {value2 !== undefined ? (
         <div
           dir={ltr2 ? "ltr" : undefined}
@@ -118,6 +114,17 @@ export default function PermitNotice({ id }: { id: string }) {
   const [qr, setQr] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const documentRef = useRef<HTMLElement>(null);
+
+  // পেজ লোড হওয়ার সাথে সাথে CDN স্ক্রিপ্ট ব্যাকগ্রাউন্ডে লোড হবে
+  useEffect(() => {
+    if (typeof window !== "undefined" && !(window as any).html2pdf) {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      document.body.appendChild(script);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -152,13 +159,18 @@ export default function PermitNotice({ id }: { id: string }) {
     };
   }, [id]);
 
-  // ডাউনলোড স্ক্রিপ্ট (কোনো Type Error আসবে না)
   const handleDownloadPdf = async () => {
     if (!documentRef.current) return;
+    
+    const html2pdf = (window as any).html2pdf;
+    if (!html2pdf) {
+      alert("PDF download library is loading, please try again in a second.");
+      return;
+    }
+
     setIsDownloading(true);
 
     try {
-      const html2pdf = (await import("html2pdf.js" as any)).default;
       const opt = {
         margin: [4, 4, 4, 4],
         filename: `Ajeer-Permit-${permit?.id || "notice"}.pdf`,
@@ -169,8 +181,7 @@ export default function PermitNotice({ id }: { id: string }) {
 
       await html2pdf().set(opt).from(documentRef.current).save();
     } catch (error) {
-      console.error("PDF generation failed, falling back to print:", error);
-      window.print();
+      console.error("PDF generation failed:", error);
     } finally {
       setIsDownloading(false);
     }
@@ -192,7 +203,7 @@ export default function PermitNotice({ id }: { id: string }) {
         <p className="text-[18px] font-bold text-slate-800">Permit not found</p>
         <Link
           href="/admin"
-          className="rounded-md bg-blue-600 px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-blue-700"
+          style={{ padding: '10px 20px', background: '#2563eb', color: '#ffffff', borderRadius: '6px', textDecoration: 'none', fontWeight: 600 }}
         >
           Back to Management
         </Link>
@@ -204,7 +215,7 @@ export default function PermitNotice({ id }: { id: string }) {
     <div className="min-h-screen bg-slate-100 py-6 print:bg-white print:py-0">
       <div className="mx-auto w-full max-w-[820px] px-4 sm:px-6 print:max-w-none print:px-0">
         
-        {/* 🌟 বাটন বার - সবসময় দৃশ্যমান থাকার জন্য ইনলাইন সিএসএস দেওয়া হয়েছে 🌟 */}
+        {/* Toolbar */}
         <div 
           style={{ 
             display: 'flex', 
@@ -281,7 +292,7 @@ export default function PermitNotice({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* Paper (১০০% আপনার ডিজাইন) */}
+        {/* Paper Document */}
         <article
           ref={documentRef}
           dir="rtl"
@@ -289,7 +300,6 @@ export default function PermitNotice({ id }: { id: string }) {
         >
           {/* Header */}
           <header dir="ltr" className="flex items-center justify-between border border-slate-300 p-2">
-            {/* QR — left side */}
             <div className="shrink-0 border border-slate-300 bg-white p-2">
               {qr ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -303,7 +313,6 @@ export default function PermitNotice({ id }: { id: string }) {
               )}
             </div>
 
-            {/* Title + logos — right side */}
             <div className="flex items-center gap-2">
               <h1
                 dir="rtl"
