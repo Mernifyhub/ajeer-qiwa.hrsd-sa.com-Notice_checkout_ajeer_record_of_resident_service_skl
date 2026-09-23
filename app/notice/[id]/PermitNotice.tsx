@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 import { AjeerLogo, MhrsdLogo, PrintIcon } from "@/components/Logos";
 import type { Permit } from "@/lib/types";
 
-// Download SVG Icon (মূল ডিজাইনে কোনো পরিবর্তন করবে না)
+// ডাউনলোড আইকন
 function DownloadIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -36,7 +36,7 @@ const DECLARATIONS = [
 
 const v = (s?: string) => (s && s.trim() ? s : "—");
 
-/* ---------- Table Building Blocks (১০০% আপনার মূল কোড) ---------- */
+/* ---------- Table Building Blocks ---------- */
 
 function DocTable({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -49,7 +49,6 @@ function DocTable({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/* Row with 2 label-value pairs side by side (১০০% আপনার মূল কোড) */
 function DocRow({
   label1,
   value1,
@@ -118,8 +117,6 @@ export default function PermitNotice({ id }: { id: string }) {
   const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
   const [qr, setQr] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  
-  // ডাউনলোডের জন্য ডকুমেন্ট রেফারেন্স
   const documentRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -155,26 +152,13 @@ export default function PermitNotice({ id }: { id: string }) {
     };
   }, [id]);
 
-  // ডাউনলোড স্ক্রিপ্ট রান করার ফাংশন (টাইপ এরর ফিক্সড)
+  // ডাউনলোড স্ক্রিপ্ট (কোনো Type Error আসবে না)
   const handleDownloadPdf = async () => {
     if (!documentRef.current) return;
     setIsDownloading(true);
 
     try {
-      const html2pdfModule = (await import("html2pdf.js")) as unknown as {
-        default?: () => {
-          set: (opt: unknown) => {
-            from: (elem: HTMLElement) => { save: () => Promise<void> };
-          };
-        };
-      };
-      
-      const html2pdf = html2pdfModule.default || (html2pdfModule as unknown as () => {
-        set: (opt: unknown) => {
-          from: (elem: HTMLElement) => { save: () => Promise<void> };
-        };
-      });
-
+      const html2pdf = (await import("html2pdf.js" as any)).default;
       const opt = {
         margin: [4, 4, 4, 4],
         filename: `Ajeer-Permit-${permit?.id || "notice"}.pdf`,
@@ -194,7 +178,7 @@ export default function PermitNotice({ id }: { id: string }) {
 
   if (state === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-ajeer-bg">
+      <div className="flex min-h-screen items-center justify-center bg-slate-100">
         <p className="animate-pulse text-[14px] text-slate-500">
           Loading permit notice…
         </p>
@@ -204,11 +188,11 @@ export default function PermitNotice({ id }: { id: string }) {
 
   if (state === "missing" || !permit) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-ajeer-bg px-6 text-center">
-        <p className="text-[18px] font-bold text-ajeer-ink">Permit not found</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-100 px-6 text-center">
+        <p className="text-[18px] font-bold text-slate-800">Permit not found</p>
         <Link
           href="/admin"
-          className="rounded-md bg-ajeer-navy px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-ajeer-navy-dark"
+          className="rounded-md bg-blue-600 px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-blue-700"
         >
           Back to Management
         </Link>
@@ -217,27 +201,59 @@ export default function PermitNotice({ id }: { id: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-ajeer-bg py-6 print:bg-white print:py-0">
+    <div className="min-h-screen bg-slate-100 py-6 print:bg-white print:py-0">
       <div className="mx-auto w-full max-w-[820px] px-4 sm:px-6 print:max-w-none print:px-0">
         
-        {/* Toolbar — Screen only */}
-        <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+        {/* 🌟 বাটন বার - সবসময় দৃশ্যমান থাকার জন্য ইনলাইন সিএসএস দেওয়া হয়েছে 🌟 */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '16px', 
+            background: '#ffffff', 
+            padding: '12px', 
+            borderRadius: '8px', 
+            border: '1px solid #cbd5e1' 
+          }} 
+          className="print:hidden"
+        >
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-[14px] font-semibold text-ajeer-ink transition hover:border-ajeer-navy/40 hover:bg-slate-50"
+            style={{ 
+              padding: '8px 16px', 
+              background: '#f1f5f9', 
+              borderRadius: '6px', 
+              fontSize: '14px', 
+              fontWeight: 600, 
+              color: '#334155', 
+              textDecoration: 'none' 
+            }}
           >
             ← Back to Management
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', gap: '8px' }}>
             {/* Download PDF Button */}
             <button
               type="button"
               disabled={isDownloading}
               onClick={handleDownloadPdf}
-              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-[14px] font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                background: '#059669', 
+                color: '#ffffff', 
+                padding: '8px 18px', 
+                borderRadius: '6px', 
+                fontSize: '14px', 
+                fontWeight: 600, 
+                border: 'none', 
+                cursor: 'pointer' 
+              }}
             >
-              <DownloadIcon className="h-[17px] w-[17px] text-slate-600" />
+              <DownloadIcon className="h-4 w-4 text-white" />
               {isDownloading ? "Downloading..." : "Download PDF"}
             </button>
 
@@ -245,15 +261,27 @@ export default function PermitNotice({ id }: { id: string }) {
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 rounded-md bg-ajeer-navy px-5 py-2.5 text-[14px] font-semibold text-white shadow-sm transition hover:bg-ajeer-navy-dark cursor-pointer"
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                background: '#1e293b', 
+                color: '#ffffff', 
+                padding: '8px 18px', 
+                borderRadius: '6px', 
+                fontSize: '14px', 
+                fontWeight: 600, 
+                border: 'none', 
+                cursor: 'pointer' 
+              }}
             >
-              <PrintIcon className="h-[17px] w-[17px]" />
+              <PrintIcon className="h-4 w-4" />
               Print
             </button>
           </div>
         </div>
 
-        {/* Paper (১০০% আপনার মূল ডিজাইন এবং ক্লাসেস) */}
+        {/* Paper (১০০% আপনার ডিজাইন) */}
         <article
           ref={documentRef}
           dir="rtl"
@@ -275,7 +303,7 @@ export default function PermitNotice({ id }: { id: string }) {
               )}
             </div>
 
-            {/* Title + logos — right side, all in one line */}
+            {/* Title + logos — right side */}
             <div className="flex items-center gap-2">
               <h1
                 dir="rtl"
