@@ -185,81 +185,88 @@ export default function PermitNotice({ id }: { id: string }) {
 
   /* ---------- Download PDF ---------- */
 
-  const handleDownload = async () => {
-    if (!printRef.current || !permit) return;
+const handleDownload = async () => {
+  if (!printRef.current || !permit) return;
 
-    try {
-      setDownloading(true);
+  try {
+    setDownloading(true);
 
-      const element = printRef.current;
+    const element = printRef.current;
 
-      /*
-       * Wait a little so images / QR are fully rendered.
-       */
-      await new Promise((resolve) => setTimeout(resolve, 300));
+    // Make sure QR/images/fonts are rendered
+    await document.fonts.ready;
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        imageTimeout: 15000,
-      });
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: "#ffffff",
+      logging: false,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
+    });
 
-      const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = 210;
+    const pageHeight = 297;
 
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const margin = 5;
 
-      let heightLeft = imgHeight;
-      let position = 0;
+    const availableWidth = pageWidth - margin * 2;
 
-      /* First page */
+    const imageHeight =
+      (canvas.height * availableWidth) / canvas.width;
+
+    let heightLeft = imageHeight;
+    let position = margin;
+
+    // First page
+    pdf.addImage(
+      imgData,
+      "JPEG",
+      margin,
+      position,
+      availableWidth,
+      imageHeight
+    );
+
+    heightLeft -= pageHeight - margin * 2;
+
+    // Additional pages
+    while (heightLeft > 0) {
+      position = margin - (imageHeight - heightLeft);
+
+      pdf.addPage();
+
       pdf.addImage(
         imgData,
-        "PNG",
-        0,
+        "JPEG",
+        margin,
         position,
-        imgWidth,
-        imgHeight
+        availableWidth,
+        imageHeight
       );
 
-      heightLeft -= pageHeight;
-
-      /* Additional pages if needed */
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-
-        pdf.addPage();
-
-        pdf.addImage(
-          imgData,
-          "PNG",
-          0,
-          position,
-          imgWidth,
-          imgHeight
-        );
-
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`Ajeer-Permit-${permit.id}.pdf`);
-    } catch (error) {
-      console.error("PDF download failed:", error);
-    } finally {
-      setDownloading(false);
+      heightLeft -= pageHeight - margin * 2;
     }
-  };
+
+    // Direct PDF download
+    pdf.save(`Ajeer-Permit-${permit.id}.pdf`);
+  } catch (error) {
+    console.error("PDF download error:", error);
+
+    alert("PDF download failed. Please try again.");
+  } finally {
+    setDownloading(false);
+  }
+};
 
   /* ---------- Loading ---------- */
 
