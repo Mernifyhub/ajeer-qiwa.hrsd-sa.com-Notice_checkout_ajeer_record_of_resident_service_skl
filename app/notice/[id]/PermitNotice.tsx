@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import html2canvas from "html2canvas";
@@ -10,21 +11,126 @@ import { AjeerLogo, MhrsdLogo, PrintIcon } from "@/components/Logos";
 import type { Permit } from "@/lib/types";
 
 const DECLARATIONS = [
-  "إن العامل حامل هذا التصريح بحمله له يقر ويتعهد بأن البيانات المدونة فيه صحيحة على مسؤوليته الشخصية، وأنه يعمل لدى المنشأة ولحسابها، بموجب رخصة إقامة سارية المفعول، وأتحمل أي تبعات قانونية أو غرامات تترتب على خلاف المذكور أعلاه.",
-  "الالتزام والتقيد بأنظمة العمل والعمال وأي أنظمة و لوائح وقرارات أخرى ذات علاقة.",
-  "أن الموقع الإلكتروني الخاص بأجير أو القائمين عليه عبارة عن وسيط إلكتروني ما بين الباحثين عن العمل وأصحاب الأعمال فقط وبدون أي التزام قانوني أو غيره على القائمين على موقع أجير.",
+  "أقر أنا المنشأة المقدمة للخدمة والموضحة بياناتي أعلاه وأتعهد بـ:",
+  "أن العامل حامل هذا التصريح يعمله لم يقر ويتعهد بأن البيانات المدونة فيه صحيحة على مسؤوليتي الشخصية، وأنه يعمل لدى المنشأة ولحسابها، بموجب رخصة إقامة سارية المفعول، وأتحمل أي تبعات قانونية أو غرامات تترتب على خلاف المذكور.",
+  "الالتزام والتقيد بأنظمة العمل والعمال وأي أنظمة ولوائح وقرارات أخرى ذات علاقة.",
+  "أن الموقع الإلكتروني الخاص بأجير حلول الموارد البشرية أو القائمين عليه عبارة عن وسيط إلكتروني ما بين الباحثين عن العمل وأصحاب الأعمال فقط وبدون أي التزام قانوني أو غيره على القائمين على موقع أجير.",
   "أي تعديل أو كشط في هذا التصريح يجعله لاغياً.",
 ];
 
 const v = (s?: string) => (s && s.trim() ? s : "—");
 
+/* ---------- Table Building Blocks ---------- */
+
+function DocTable({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border border-slate-400">
+      <div className="border-b border-slate-400 bg-slate-100 px-3 py-2 text-center">
+        <h3 className="text-[13px] font-bold text-slate-800">
+          {title}
+        </h3>
+      </div>
+
+      <div className="divide-y divide-slate-400">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Table Row ---------- */
+
+function DocRow({
+  label1,
+  value1,
+  label2,
+  value2,
+  ltr1 = false,
+  ltr2 = false,
+}: {
+  label1: { ar: string; en: string };
+  value1: string;
+  label2?: { ar: string; en: string };
+  value2?: string;
+  ltr1?: boolean;
+  ltr2?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-4">
+      {/* Label 1 */}
+      <div className="flex flex-col justify-center gap-0.5 border-l border-slate-400 bg-slate-50 px-3 py-2.5">
+        <span className="text-[11.5px] font-semibold leading-4 text-slate-700">
+          {label1.ar}
+        </span>
+
+        <span
+          dir="ltr"
+          className="text-right text-[9.5px] leading-3 text-slate-500"
+        >
+          {label1.en}
+        </span>
+      </div>
+
+      {/* Value 1 */}
+      <div
+        dir={ltr1 ? "ltr" : undefined}
+        className="flex items-center justify-center break-all border-l border-slate-400 bg-white px-2 py-2.5 text-center text-[12.5px] font-semibold text-slate-800"
+      >
+        {value1}
+      </div>
+
+      {/* Label 2 */}
+      {label2 ? (
+        <div className="flex flex-col justify-center gap-0.5 border-l border-slate-400 bg-slate-50 px-3 py-2.5">
+          <span className="text-[11.5px] font-semibold leading-4 text-slate-700">
+            {label2.ar}
+          </span>
+
+          <span
+            dir="ltr"
+            className="text-right text-[9.5px] leading-3 text-slate-500"
+          >
+            {label2.en}
+          </span>
+        </div>
+      ) : (
+        <div className="border-l border-slate-400 bg-slate-50" />
+      )}
+
+      {/* Value 2 */}
+      {value2 !== undefined ? (
+        <div
+          dir={ltr2 ? "ltr" : undefined}
+          className="flex items-center justify-center break-all bg-white px-2 py-2.5 text-center text-[12.5px] font-semibold text-slate-800"
+        >
+          {value2}
+        </div>
+      ) : (
+        <div className="bg-white" />
+      )}
+    </div>
+  );
+}
+
 /* ---------- Main Component ---------- */
 
 export default function PermitNotice({ id }: { id: string }) {
   const [permit, setPermit] = useState<Permit | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "missing">("loading");
+
+  const [state, setState] = useState<
+    "loading" | "ready" | "missing"
+  >("loading");
+
   const [qr, setQr] = useState("");
+
   const [downloading, setDownloading] = useState(false);
+
   const printRef = useRef<HTMLElement>(null);
 
   /* ---------- Fetch Permit ---------- */
@@ -34,22 +140,30 @@ export default function PermitNotice({ id }: { id: string }) {
 
     (async () => {
       try {
-        const res = await fetch(`/api/permits/${encodeURIComponent(id)}`, {
-          cache: "no-store",
-        });
+        const res = await fetch(
+          `/api/permits/${encodeURIComponent(id)}`,
+          {
+            cache: "no-store",
+          }
+        );
 
         if (!res.ok) {
-          if (!cancelled) setState("missing");
+          if (!cancelled) {
+            setState("missing");
+          }
+
           return;
         }
 
         const data: Permit = await res.json();
+
         if (cancelled) return;
 
         setPermit(data);
         setState("ready");
 
         /* ---------- QR ---------- */
+
         const url =
           `https://ajeer-qiwa-hrsd-sa-com-notice-check.vercel.app/` +
           `Notice_checkout_ajeer_record_of_resident_service_skl.php?id=` +
@@ -57,14 +171,21 @@ export default function PermitNotice({ id }: { id: string }) {
 
         const png = await QRCode.toDataURL(url, {
           width: 480,
-          margin: 0,
+          margin: 1,
           errorCorrectionLevel: "M",
-          color: { dark: "#000000", light: "#ffffff" },
+          color: {
+            dark: "#111111",
+            light: "#ffffff",
+          },
         });
 
-        if (!cancelled) setQr(png);
+        if (!cancelled) {
+          setQr(png);
+        }
       } catch {
-        if (!cancelled) setState("missing");
+        if (!cancelled) {
+          setState("missing");
+        }
       }
     })();
 
@@ -82,14 +203,25 @@ export default function PermitNotice({ id }: { id: string }) {
 
     try {
       setDownloading(true);
+
       const element = printRef.current;
 
+      /*
+       * Wait for fonts and images to finish rendering.
+       */
+
       await document.fonts.ready;
-      const images = Array.from(element.querySelectorAll("img"));
+
+      const images = Array.from(
+        element.querySelectorAll("img")
+      );
 
       await Promise.all(
         images.map((img) => {
-          if (img.complete) return Promise.resolve();
+          if (img.complete) {
+            return Promise.resolve();
+          }
+
           return new Promise<void>((resolve) => {
             img.onload = () => resolve();
             img.onerror = () => resolve();
@@ -97,16 +229,175 @@ export default function PermitNotice({ id }: { id: string }) {
         })
       );
 
+      /*
+       * html2canvas has a problem with modern CSS
+       * color functions such as oklch().
+       *
+       * We create a temporary cloned document and
+       * replace unsupported oklch colors there only.
+       *
+       * The actual page/design is NOT changed.
+       */
+
       const canvas = await html2canvas(element, {
         scale: 2,
+
         useCORS: true,
+
         allowTaint: false,
+
         backgroundColor: "#ffffff",
+
         logging: false,
+
         imageTimeout: 15000,
+
+        onclone: (clonedDocument) => {
+          const clonedRoot =
+            clonedDocument.querySelector(
+              "[data-pdf-content='true']"
+            ) as HTMLElement | null;
+
+          if (!clonedRoot) return;
+
+          const allElements = [
+            clonedRoot,
+            ...Array.from(
+              clonedRoot.querySelectorAll("*")
+            ),
+          ] as HTMLElement[];
+
+          /*
+           * Force compatible colors only inside
+           * the cloned PDF document.
+           */
+
+          allElements.forEach((el) => {
+            const computed =
+              clonedDocument.defaultView?.getComputedStyle(el);
+
+            if (!computed) return;
+
+            /*
+             * Color
+             */
+
+            if (
+              computed.color &&
+              computed.color.includes("oklch")
+            ) {
+              el.style.setProperty(
+                "color",
+                "#334155",
+                "important"
+              );
+            }
+
+            /*
+             * Background
+             */
+
+            if (
+              computed.backgroundColor &&
+              computed.backgroundColor.includes("oklch")
+            ) {
+              el.style.setProperty(
+                "background-color",
+                "#ffffff",
+                "important"
+              );
+            }
+
+            /*
+             * Border colors
+             */
+
+            const borderProperties = [
+              "border-top-color",
+              "border-right-color",
+              "border-bottom-color",
+              "border-left-color",
+            ];
+
+            borderProperties.forEach((property) => {
+              const value =
+                computed.getPropertyValue(property);
+
+              if (value && value.includes("oklch")) {
+                el.style.setProperty(
+                  property,
+                  "#94a3b8",
+                  "important"
+                );
+              }
+            });
+
+            /*
+             * Outline
+             */
+
+            const outline =
+              computed.getPropertyValue("outline-color");
+
+            if (outline && outline.includes("oklch")) {
+              el.style.setProperty(
+                "outline-color",
+                "#94a3b8",
+                "important"
+              );
+            }
+
+            /*
+             * Box shadow
+             */
+
+            const shadow =
+              computed.getPropertyValue("box-shadow");
+
+            if (shadow && shadow.includes("oklch")) {
+              el.style.setProperty(
+                "box-shadow",
+                "none",
+                "important"
+              );
+            }
+
+            /*
+             * Text decoration
+             */
+
+            const decoration =
+              computed.getPropertyValue(
+                "text-decoration-color"
+              );
+
+            if (
+              decoration &&
+              decoration.includes("oklch")
+            ) {
+              el.style.setProperty(
+                "text-decoration-color",
+                "#334155",
+                "important"
+              );
+            }
+          });
+        },
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      /*
+       * Convert canvas to image.
+       */
+
+      const imgData = canvas.toDataURL(
+        "image/jpeg",
+        0.95
+      );
+
+      /*
+       * Create A4 PDF.
+       */
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -116,49 +407,112 @@ export default function PermitNotice({ id }: { id: string }) {
 
       const pageWidth = 210;
       const pageHeight = 297;
+
       const margin = 5;
-      const contentWidth = pageWidth - margin * 2;
-      const contentHeight = (canvas.height * contentWidth) / canvas.width;
+
+      const contentWidth =
+        pageWidth - margin * 2;
+
+      const contentHeight =
+        (canvas.height * contentWidth) /
+        canvas.width;
+
+      /*
+       * We use the whole captured document and
+       * automatically create additional A4 pages
+       * when required.
+       */
 
       let remainingHeight = contentHeight;
+
       let position = margin;
 
-      pdf.addImage(imgData, "JPEG", margin, position, contentWidth, contentHeight);
-      remainingHeight -= pageHeight - margin * 2;
+      /*
+       * First page
+       */
+
+      pdf.addImage(
+        imgData,
+        "JPEG",
+        margin,
+        position,
+        contentWidth,
+        contentHeight
+      );
+
+      remainingHeight -=
+        pageHeight - margin * 2;
+
+      /*
+       * More pages
+       */
 
       while (remainingHeight > 0) {
         pdf.addPage();
-        position = margin - (contentHeight - remainingHeight);
-        pdf.addImage(imgData, "JPEG", margin, position, contentWidth, contentHeight);
-        remainingHeight -= pageHeight - margin * 2;
+
+        position =
+          margin -
+          (contentHeight -
+            remainingHeight);
+
+        pdf.addImage(
+          imgData,
+          "JPEG",
+          margin,
+          position,
+          contentWidth,
+          contentHeight
+        );
+
+        remainingHeight -=
+          pageHeight - margin * 2;
       }
 
-      pdf.save(`Ajeer-Permit-${permit.id}.pdf`);
+      /*
+       * Direct download.
+       */
+
+      pdf.save(
+        `Ajeer-Permit-${permit.id}.pdf`
+      );
     } catch (error) {
-      console.error("PDF download error:", error);
-      alert("PDF download failed. Please try again.");
+      console.error(
+        "PDF download error:",
+        error
+      );
+
+      alert(
+        "PDF download failed. Please try again."
+      );
     } finally {
       setDownloading(false);
     }
   };
 
-  /* ---------- Loading & Missing States ---------- */
+  /* ---------- Loading ---------- */
 
   if (state === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="animate-pulse text-sm text-gray-500">Loading permit notice…</p>
+      <div className="flex min-h-screen items-center justify-center bg-ajeer-bg">
+        <p className="animate-pulse text-[14px] text-slate-500">
+          Loading permit notice…
+        </p>
       </div>
     );
   }
 
+  /* ---------- Missing ---------- */
+
   if (state === "missing" || !permit) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-6 text-center">
-        <p className="text-lg font-bold text-gray-800">Permit not found</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-ajeer-bg px-6 text-center">
+        <p className="text-[18px] font-bold text-ajeer-ink">
+          Permit not found
+        </p>
+
         <Link
           href="/admin"
-          className="rounded-md bg-blue-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+          className="rounded-md bg-ajeer-navy px-5 py-2.5 text-[14px] font-semibold text-white hover:bg-ajeer-navy-dark"
         >
           Back to Management
         </Link>
@@ -166,173 +520,259 @@ export default function PermitNotice({ id }: { id: string }) {
     );
   }
 
-  /* ---------- Main View ---------- */
+  /* ---------- Main ---------- */
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 print:bg-white print:py-0">
-      <div className="mx-auto w-full max-w-[850px] px-4 sm:px-6 print:max-w-none print:px-0">
+    <div className="min-h-screen bg-ajeer-bg py-6 print:bg-white print:py-0">
+      <div className="mx-auto w-full max-w-[820px] px-4 sm:px-6 print:max-w-none print:px-0">
+
         {/* Toolbar */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
+
+        <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+
+          {/* Back */}
+
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-[14px] font-semibold text-ajeer-ink transition hover:border-ajeer-navy/40 hover:bg-slate-50"
           >
             ← Back to Management
           </Link>
+
+          {/* Buttons */}
+
           <div className="flex items-center gap-2">
+
+            {/* Download */}
+
             <button
               type="button"
               onClick={handleDownload}
               disabled={downloading}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-5 py-2.5 text-[14px] font-semibold text-ajeer-ink shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {downloading ? "Downloading..." : "Download PDF"}
+              {downloading ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" />
+
+                  Downloading...
+                </>
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-[17px] w-[17px]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"
+                    />
+                  </svg>
+
+                  Download
+                </>
+              )}
             </button>
+
+            {/* Print */}
+
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 rounded-md bg-blue-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
+              className="inline-flex items-center gap-2 rounded-md bg-ajeer-navy px-5 py-2.5 text-[14px] font-semibold text-white shadow-sm transition hover:bg-ajeer-navy-dark"
             >
               <PrintIcon className="h-[17px] w-[17px]" />
+
               Print
             </button>
           </div>
         </div>
 
-        {/* Paper Document */}
+        {/* Paper */}
+
         <article
           ref={printRef}
           data-pdf-content="true"
           dir="rtl"
-          className="font-ar bg-white p-6 shadow-lg sm:p-10 print:p-0 print:shadow-none min-h-[1050px] flex flex-col"
+          className="font-ar mt-5 bg-white p-6 shadow-[0_10px_30px_rgba(16,24,40,0.10)] ring-1 ring-slate-200 sm:p-10 print:mt-0 print:p-0 print:shadow-none print:ring-0"
         >
+
           {/* Header */}
-          <header className="flex items-center justify-between border-b-2 border-gray-200 pb-4">
-            <div className="flex flex-col items-center justify-center border border-gray-300 p-1">
+
+          <header
+            dir="ltr"
+            className="flex items-center justify-between border border-slate-300 p-2"
+          >
+
+            {/* QR */}
+
+            <div className="shrink-0 border border-slate-300 bg-white p-2">
               {qr ? (
-                <img src={qr} alt="QR" className="h-[80px] w-[80px]" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={qr}
+                  alt={`QR — ${permit.id}`}
+                  className="h-[170px] w-[170px] sm:h-[190px] sm:w-[190px]"
+                />
               ) : (
-                <div className="h-[80px] w-[80px] bg-gray-100" />
+                <div className="h-[170px] w-[170px] animate-pulse bg-slate-100 sm:h-[190px] sm:w-[190px]" />
               )}
-              <span className="mt-1 text-[10px] font-bold text-gray-800 uppercase">
-                {permit.id}
-              </span>
             </div>
 
-            <h1 className="text-center text-[22px] font-bold text-gray-800">
-              تصريح أجير – تعاقد أجير
-            </h1>
+            {/* Title + Logos */}
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+
+              <h1
+                dir="rtl"
+                className="text-right text-[16px] font-bold leading-7 text-slate-700"
+              >
+                إشعار أجير حلول الموارد
+                <br />
+                البشرية
+              </h1>
+
               <AjeerLogo className="h-12 w-auto" />
-              <MhrsdLogo className="h-14 w-auto" />
+
+              <MhrsdLogo className="h-12 w-auto" />
+
             </div>
           </header>
 
-          {/* Intro Paragraph */}
-          <p className="mt-6 text-center text-[13px] font-medium leading-[24px] text-gray-700">
+          {/* Intro */}
+
+          <p className="mt-8 text-justify text-[12px] leading-[24px] text-slate-700">
             نشعركم أنه تم التعاقد من قبلنا كجهة مقدمة للخدمة مع الجهة المستفيدة من
-            الخدمة حسب المعلومات المبينة أدناه، وذلك تم تسجيل
-            <br />
-            معلومات العقد لتكون بحوزة العامل لإثبات عدم مخالفته لنظام العمل ولتقديمها إلى
-            من يهمه الأمر من الجهات المختصة عند طلبها
-            <br />
-            للتحقق من صحة تواجده في مكان تقديم الخدمة
+            الخدمة حسب المعلومات المبينة أدناه، وذلك تم تسجيل معلومات العقد لتكون
+            بحوزة العامل لإثبات عدم مخالفته لنظام العمل ولتقديمها إلى من يهمه الأمر
+            من الجهات المختصة عند طلبها للتحقق من صحة تواجده في مكان تقديم الخدمة.
           </p>
 
-          {/* Combined Tables Container */}
-          <div className="mt-6 flex flex-col border border-gray-300 text-[13px]">
-            
-            {/* Section: Worker Info */}
-            <div className="bg-gray-100 py-1.5 text-center font-bold text-gray-800 border-b border-gray-300">
-              بيانات العامل
-            </div>
-            <div className="grid grid-cols-[15%_35%_15%_35%] border-b border-gray-300 bg-white">
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300">اسم العامل</div>
-              <div className="flex items-center justify-center p-2 font-bold text-gray-900 border-l border-gray-300 uppercase">{v(permit.employeeName)}</div>
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300">المهنة</div>
-              <div className="flex items-center justify-center p-2 font-bold text-gray-900">{v(permit.occupation)}</div>
-            </div>
-            <div className="grid grid-cols-[15%_35%_15%_35%] border-b border-gray-300 bg-white">
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300">رقم الهوية / الإقامة</div>
-              <div dir="ltr" className="flex items-center justify-center p-2 font-bold text-gray-900 border-l border-gray-300">{v(permit.idNumber)}</div>
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300">الجنسية</div>
-              <div className="flex items-center justify-center p-2 font-bold text-gray-900">{v(permit.nationality)}</div>
-            </div>
+          {/* Tables */}
 
-            {/* Section: Provider Info */}
-            <div className="bg-gray-100 py-1.5 text-center font-bold text-gray-800 border-b border-gray-300">
-              بيانات مقدم الخدمة
-            </div>
-            <div className="grid grid-cols-[15%_35%_20%_30%] border-b border-gray-300 bg-white">
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300 text-center">المنشأة المقدمة للخدمة</div>
-              <div className="flex items-center justify-center p-2 font-bold text-gray-900 border-l border-gray-300 text-center">{v(permit.provider.name)}</div>
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300 text-center">رقم المنشأة في وزارة الموارد<br/>البشرية و التنمية الاجتماعية</div>
-              <div dir="ltr" className="flex items-center justify-center p-2 font-bold text-gray-900">{v(permit.provider.number)}</div>
-            </div>
+          <div className="mt-6 space-y-3">
 
-            {/* Section: Beneficiary Info */}
-            <div className="bg-gray-100 py-1.5 text-center font-bold text-gray-800 border-b border-gray-300">
-              بيانات المستفيد من الخدمة
-            </div>
-            <div className="grid grid-cols-[15%_35%_20%_30%] border-b border-gray-300 bg-white">
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300 text-center">المنشأة المستفيدة من الخدمة</div>
-              <div className="flex items-center justify-center p-2 font-bold text-gray-900 border-l border-gray-300 text-center">{v(permit.beneficiary.name)}</div>
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300 text-center">رقم المنشأة في وزارة الموارد<br/>البشرية و التنمية الاجتماعية</div>
-              <div dir="ltr" className="flex items-center justify-center p-2 font-bold text-gray-900">{v(permit.beneficiary.number)}</div>
-            </div>
+            {/* Laborer */}
 
-            {/* Section: Permit Info */}
-            <div className="bg-gray-100 py-1.5 text-center font-bold text-gray-800 border-b border-gray-300">
-              بيانات التصريح
-            </div>
-            <div className="grid grid-cols-[15%_85%] border-b border-gray-300 bg-white">
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300">نبذة عن التعاقد</div>
-              {/* Fallback to text from image if property doesn't exist in type */}
-              <div className="flex items-center justify-center p-2 font-bold text-gray-900">
-                {(permit as any).contractBrief || `تعاقد أجير ${permit.beneficiary.name}`}
-              </div>
-            </div>
-            <div className="grid grid-cols-[15%_35%_15%_35%] border-b border-gray-300 bg-white">
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300">تاريخ بداية التصريح</div>
-              <div dir="ltr" className="flex items-center justify-center p-2 font-bold text-gray-900 border-l border-gray-300">{v(permit.startDate)}</div>
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300">تاريخ نهاية التصريح</div>
-              <div dir="ltr" className="flex items-center justify-center p-2 font-bold text-gray-900">{v(permit.endDate)}</div>
-            </div>
-            <div className="grid grid-cols-[15%_85%] bg-white">
-              <div className="flex items-center justify-center bg-gray-100 p-2 font-bold text-gray-700 border-l border-gray-300">مواقع العمل</div>
-              {/* Fallback to text from image if property doesn't exist in type */}
-              <div className="flex items-center justify-center p-2 font-bold text-gray-900">
-                 {(permit as any).workLocation || "المنطقة الصناعية، الرياض، السعودية"}
-              </div>
-            </div>
+            <DocTable title="بيانات العامل  Laborer Information">
+
+              <DocRow
+                label1={{
+                  ar: "اسم العامل",
+                  en: "Laborer Name",
+                }}
+                value1={v(permit.employeeName)}
+                label2={{
+                  ar: "المهنة",
+                  en: "Occupation",
+                }}
+                value2={v(permit.occupation)}
+              />
+
+              <DocRow
+                label1={{
+                  ar: "رقم الهوية / الإقامة",
+                  en: "ID Number",
+                }}
+                value1={v(permit.idNumber)}
+                ltr1
+                label2={{
+                  ar: "الجنسية",
+                  en: "Nationality",
+                }}
+                value2={v(permit.nationality)}
+              />
+
+            </DocTable>
+
+            {/* Provider */}
+
+            <DocTable title="بيانات مقدم الخدمة  Provider Information">
+
+              <DocRow
+                label1={{
+                  ar: "المنشأة المقدمة للخدمة",
+                  en: "Provider Establishment",
+                }}
+                value1={v(permit.provider.name)}
+                label2={{
+                  ar: "رقم المنشأة في وزارة الموارد البشرية والتنمية الاجتماعية",
+                  en: "Establishment Number",
+                }}
+                value2={v(permit.provider.number)}
+                ltr2
+              />
+
+            </DocTable>
+
+            {/* Beneficiary */}
+
+            <DocTable title="بيانات المستفيد من الخدمة  Beneficiary Information">
+
+              <DocRow
+                label1={{
+                  ar: "المنشأة المستفيدة من الخدمة",
+                  en: "Beneficiary Establishment",
+                }}
+                value1={v(permit.beneficiary.name)}
+                label2={{
+                  ar: "رقم المنشأة في وزارة الموارد البشرية والتنمية الاجتماعية",
+                  en: "Establishment Number",
+                }}
+                value2={v(permit.beneficiary.number)}
+                ltr2
+              />
+
+            </DocTable>
+
+            {/* Permit */}
+
+            <DocTable title="بيانات التصريح  Permit Information">
+
+              <DocRow
+                label1={{
+                  ar: "تاريخ بداية التصريح",
+                  en: "Permit Start Date",
+                }}
+                value1={v(permit.startDate)}
+                ltr1
+                label2={{
+                  ar: "تاريخ نهاية التصريح",
+                  en: "Permit End Date",
+                }}
+                value2={v(permit.endDate)}
+                ltr2
+              />
+
+            </DocTable>
 
           </div>
 
           {/* Declarations */}
-          <div className="mt-6 flex-1">
-            <h3 className="text-right text-[15px] font-bold text-gray-900">
+
+          <div className="mt-8">
+
+            <h3 className="text-center text-[14px] font-bold text-slate-900">
               إقرارات
             </h3>
-            <p className="mt-2 text-[13px] font-bold text-gray-900">
-              أقر أنا المنشأة المقدمة للخدمة والموضحة بياناتي أعلاه وأتعهد بـ:
+
+            <p className="mt-3 text-[11.5px] font-semibold leading-6 text-slate-700">
+              {DECLARATIONS[0]}
             </p>
-            <ul className="mt-1 list-disc space-y-1.5 pe-5 text-[12px] font-medium leading-[22px] text-gray-700 marker:text-gray-800">
-              {DECLARATIONS.map((note, i) => (
-                <li key={i}>{note}</li>
+
+            <ul className="mt-2 list-disc space-y-2 pe-5 text-[11px] leading-[22px] text-slate-600">
+              {DECLARATIONS.slice(1).map((note) => (
+                <li key={note}>{note}</li>
               ))}
             </ul>
+
           </div>
 
-          {/* Footer */}
-          <footer className="mt-8 pt-4 text-center text-[12px] font-bold text-gray-600">
-            <p>
-              للتحقق من صحة هذا التصريح وسريان مفعوله بإمكانك زيارة موقع أجير (https://ajeer.com.sa)
-            </p>
-            <p className="mt-1">
-              * خدمة معتمدة من وزارة الموارد البشرية والتنمية الاجتماعية *
-            </p>
-          </footer>
         </article>
       </div>
     </div>
